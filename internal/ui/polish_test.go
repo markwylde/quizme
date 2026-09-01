@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/widget"
 
 	"github.com/markwylde/interrogate/internal/questionnaire"
@@ -187,48 +188,119 @@ func TestTogglingAnEmptyCommentIsNotDirty(t *testing.T) {
 
 // --- Progress -----------------------------------------------------------
 
-func TestProgressStartsAtNone(t *testing.T) {
+func TestProgressStartsEmpty(t *testing.T) {
 	f, _ := build(t, uiDoc)
+	if got := f.progress.Value(); got != 0 {
+		t.Errorf("progress = %v, want 0 on a fresh questionnaire", got)
+	}
 	// storage_why is gated, so it is not among the applicable questions.
-	if got := f.progress.Text; got != "0 of 7 answered" {
-		t.Errorf("progress = %q", got)
+	if got := f.progressText(); got != "0 of 7 answered" {
+		t.Errorf("progress label = %q", got)
 	}
 }
 
 func TestProgressFollowsAnswers(t *testing.T) {
 	f, _ := build(t, uiDoc)
+
 	find[*widget.Entry](t, f, "name").SetText("interrogate")
-	if got := f.progress.Text; got != "1 of 7 answered" {
-		t.Errorf("progress = %q", got)
+	if got := f.progress.Value(); !closeTo(got, 1.0/7.0) {
+		t.Errorf("progress = %v, want one seventh", got)
 	}
 	find[*widget.RadioGroup](t, f, "ship").SetSelected("No")
-	if got := f.progress.Text; got != "2 of 7 answered" {
-		t.Errorf("progress = %q", got)
+	if got := f.progress.Value(); !closeTo(got, 2.0/7.0) {
+		t.Errorf("progress = %v, want two sevenths", got)
 	}
+
 	// Clearing an answer takes it back off the count.
 	find[*widget.Entry](t, f, "name").SetText("")
-	if got := f.progress.Text; got != "1 of 7 answered" {
-		t.Errorf("progress = %q", got)
+	if got := f.progress.Value(); !closeTo(got, 1.0/7.0) {
+		t.Errorf("progress = %v after clearing", got)
+	}
+}
+
+func TestProgressReadsFullWhenEverythingApplicableIsAnswered(t *testing.T) {
+	f, _ := build(t, `
+title: t
+questions:
+  - {id: a, type: text, prompt: "A?"}
+  - {id: b, type: text, prompt: "B?"}
+`)
+	find[*widget.Entry](t, f, "a").SetText("x")
+	find[*widget.Entry](t, f, "b").SetText("y")
+	if got := f.progress.Value(); !closeTo(got, 1) {
+		t.Errorf("progress = %v, want complete", got)
+	}
+	if got := f.progressText(); got != "2 of 2 answered" {
+		t.Errorf("progress label = %q", got)
 	}
 }
 
 func TestProgressIgnoresHiddenQuestions(t *testing.T) {
 	f, _ := build(t, uiDoc)
-	if strings.HasSuffix(f.progress.Text, "of 8 answered") {
-		t.Errorf("progress = %q, but one question is hidden", f.progress.Text)
+	if got := f.progressText(); strings.HasSuffix(got, "of 8 answered") {
+		t.Errorf("progress = %q, but one question is hidden", got)
 	}
 }
 
 func TestProgressTotalGrowsWhenAQuestionAppears(t *testing.T) {
 	f, _ := build(t, uiDoc)
-	// Answering the gate reveals its follow-up, so the total goes up by two:
-	// one for the answer given, one for the question it uncovered.
+	// Answering the gate reveals its follow-up, so the total goes up.
 	find[*widget.RadioGroup](t, f, "storage").SetSelected("sidecar")
-	if got := f.progress.Text; got != "1 of 8 answered" {
+	if got := f.progressText(); got != "1 of 8 answered" {
 		t.Errorf("progress = %q, want the revealed question counted", got)
 	}
 	find[*widget.RadioGroup](t, f, "storage").SetSelected("both")
-	if got := f.progress.Text; got != "1 of 7 answered" {
+	if got := f.progressText(); got != "1 of 7 answered" {
 		t.Errorf("progress = %q, want the hidden question dropped", got)
+	}
+}
+
+func closeTo(got, want float64) bool {
+	d := got - want
+	if d < 0 {
+		d = -d
+	}
+	return d < 0.0001
+}
+
+func TestEmptyProgressBarLooksEmpty(t *testing.T) {
+	// The whole reason for a custom bar: Fyne's own paints its track in a faded
+	// primary, so nothing-answered reads as partly-done.
+	p := newProgressBar()
+	p.CreateRenderer()
+	p.SetValue(0)
+	p.Resize(fyne.NewSize(100, progressHeight))
+
+	if p.fill.Size().Width != 0 {
+		t.Errorf("fill width = %v at zero, want 0", p.fill.Size().Width)
+	}
+	if p.track.FillColor == p.fill.FillColor {
+		t.Error("the track and the fill are the same colour, so empty looks full")
+	}
+}
+
+func TestProgressBarFillsProportionally(t *testing.T) {
+	p := newProgressBar()
+	p.CreateRenderer()
+	p.Resize(fyne.NewSize(100, progressHeight))
+
+	for _, tc := range []struct{ value, want float64 }{{0, 0}, {0.25, 25}, {0.5, 50}, {1, 100}} {
+		p.SetValue(tc.value)
+		p.Resize(fyne.NewSize(100, progressHeight))
+		if got := float64(p.fill.Size().Width); !closeTo(got, tc.want) {
+			t.Errorf("value %v filled %v of 100, want %v", tc.value, got, tc.want)
+		}
+	}
+}
+
+func TestProgressBarClampsOutOfRange(t *testing.T) {
+	p := newProgressBar()
+	p.SetValue(-1)
+	if got := p.Value(); got != 0 {
+		t.Errorf("Value = %v after setting -1, want 0", got)
+	}
+	p.SetValue(5)
+	if got := p.Value(); got != 1 {
+		t.Errorf("Value = %v after setting 5, want 1", got)
 	}
 }

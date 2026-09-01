@@ -72,11 +72,11 @@ func (t *fixedVariantTheme) Color(name fyne.ThemeColorName, _ fyne.ThemeVariant)
 	return t.Theme.Color(name, t.variant)
 }
 
-// QuestionTint pins the variant for the bands too, so a preview renders the
-// tints of the variant it is showing rather than the app's current one.
-func (t *fixedVariantTheme) QuestionTint(index int, _ fyne.ThemeVariant) color.Color {
-	if provider, ok := t.Theme.(tintProvider); ok {
-		return provider.QuestionTint(index, t.variant)
+// QuestionCard pins the variant for the cards too, so a preview renders the
+// card colour of the variant it is showing rather than the app's current one.
+func (t *fixedVariantTheme) QuestionCard(_ fyne.ThemeVariant) color.Color {
+	if provider, ok := t.Theme.(cardProvider); ok {
+		return provider.QuestionCard(t.variant)
 	}
 	return color.Transparent
 }

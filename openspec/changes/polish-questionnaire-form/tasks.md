@@ -25,16 +25,29 @@
 - [x] 4.3 Verify hidden questions are counted in neither the answered nor the outstanding total
 - [x] 4.4 Verify the total grows when answering a question reveals a further one
 
-## 5. Question tints
+## 5. Question cards
 
 - [x] 5.1 Add a cycle of question tints to each palette in the theme, and verify every tint is within a few points of its palette's background so none competes with the content
+      → superseded: the review called the cycle the wrong approach. Replaced by 5.5–5.8.
 - [x] 5.2 Wrap each card in a band that paints its tint, and verify by rendered preview that adjacent questions differ in both light and dark
+      → superseded by 5.6.
 - [x] 5.3 Assign tints over the visible questions so a hidden one does not leave two neighbours sharing a tint, and verify against a questionnaire with a gated question in the middle
+      → superseded: with one card colour there is no adjacency to manage.
 - [x] 5.4 Have the band re-read its tint on refresh rather than capturing it once, and verify the tints follow a change of theme variant
+      → kept, and still verified: the card colour is resolved the same way.
+- [x] 5.5 Replace the tint cycle with a lightened page colour and a single card colour per palette, and verify the contrast is legible in both light and dark
+- [x] 5.6 Give every question the same card background with rounded corners and a margin to its neighbours, and verify by rendered preview that the page reads as a stack of cards
+- [x] 5.7 Decide the separator question against the new layout and verify by preview that the gap alone separates the cards
+- [x] 5.8 Verify the card colour still follows a change of theme variant on refresh
 
-## 6. Delivery
+## 6. Progress bar
 
-- [x] 6.1 Refresh the rendered previews and verify the density improvement by screenshot review with the user
-- [x] 6.2 Update the README's form screenshot and document `--validate`, and verify the README's examples still pass their own tests
-- [x] 6.3 Note in the skill that a questionnaire can be checked with `--validate`, and verify the skill's tests still pass
-- [ ] 6.4 Run the full suite and one real interrogation, and verify formatting preservation still holds end to end
+- [x] 6.1 Replace the counted readout with a progress bar over the applicable questions, and verify it reads empty on a fresh questionnaire and full when everything applicable is answered
+- [x] 6.2 Verify the bar advances as questions are answered and adjusts when a conditional question appears
+
+## 7. Delivery
+
+- [x] 7.1 Refresh the rendered previews and verify the density improvement by screenshot review with the user
+- [x] 7.2 Update the README's form screenshot and document `--validate`, and verify the README's examples still pass their own tests
+- [x] 7.3 Note in the skill that a questionnaire can be checked with `--validate`, and verify the skill's tests still pass
+- [ ] 7.4 Run the full suite and one real interrogation, and verify formatting preservation still holds end to end

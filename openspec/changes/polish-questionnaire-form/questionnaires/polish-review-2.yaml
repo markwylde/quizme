@@ -1,0 +1,105 @@
+# Second round: the first was dismissed before the tints existed.
+title: Polish pass — round two
+intro: |
+  Same questions as before, plus the coloured bands you asked for.
+
+  You're looking at: a scrolling header, comments collapsed behind the
+  pencil, a progress count in the footer, and a subtle tint per question.
+
+status: submitted
+submitted_at: "2026-09-01T12:34:23+01:00"
+
+questions:
+  - id: tints
+    type: select
+    prompt: Do the coloured bands do what you wanted?
+    help: >-
+      Six hues cycling, each within 12 points of the background so they
+      separate without shouting. The separator rules are gone — the band
+      edge does that job now.
+    required: true
+    options:
+      - Yes, that's it
+      - Too subtle, push them further
+      - Too strong, pull them back
+      - Wrong approach entirely
+    answer: Wrong approach entirely
+
+  - id: tints_detail
+    type: textarea
+    prompt: What would you change?
+    show_if:
+      tints:
+        - Too subtle, push them further
+        - Too strong, pull them back
+        - Wrong approach entirely
+    answer: 'Oh yeah that was the wrong approach. too many colours all over the place. can we try making the form a slightly lighter colour then have each question background a darker colour with a margin to the other questions. '
+
+  - id: separators
+    type: boolean
+    prompt: Was dropping the separator lines right?
+    answer: false
+
+  - id: density
+    type: scale
+    prompt: Is the page a good density now?
+    help: Two questions per screen before this pass, four and a half now.
+    min: 1
+    max: 5
+    required: true
+    answer: 3
+
+  - id: comment_affordance
+    type: select
+    prompt: Does the collapsed comment control work for you?
+    help: >-
+      Press the pencil to open one. Once you've written a comment the label
+      previews it, so a collapsed comment is never invisible — worth trying
+      on this question.
+    required: true
+    options:
+      - Yes, this is right
+      - I'd rather they were open by default again
+      - Right idea, wrong control
+    answer: Yes, this is right
+
+  - id: progress
+    type: select
+    prompt: Is "4 of 7 answered" the right progress readout?
+    help: >-
+      Note the total moves — answering question one reveals a follow-up and
+      the total goes up. Deliberate, but you may hate it.
+    options:
+      - Yes
+      - I'd prefer a bar
+      - I'd prefer a percentage
+      - Drop it, the scrollbar is enough
+    answer: I'd prefer a bar
+
+  - id: header
+    type: boolean
+    prompt: Was scrolling the header away the right call?
+    answer: true
+
+  - id: next
+    type: select
+    prompt: What next?
+    help: >-
+      distribute-interrogate-skill is planned and ready to implement.
+      Archiving this change first is the tidy path.
+    required: true
+    options:
+      - Archive this, then do the plugin
+      - Archive this and stop for now
+      - More polish first
+    answer: More polish first
+
+  - id: more_polish
+    type: textarea
+    prompt: What else needs doing?
+    show_if:
+      next: More polish first
+
+  - id: anything_else
+    type: textarea
+    prompt: Anything else?

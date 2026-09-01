@@ -72,17 +72,37 @@ The questionnaire's title and intro SHALL scroll away with the content rather th
 - **WHEN** the responder has scrolled anywhere in the questionnaire
 - **THEN** the submit and dismiss actions are still visible without scrolling back
 
+### Requirement: Questions are visually separated
+
+Each question SHALL be presented on its own card: a panel whose background contrasts with the page behind it, separated from its neighbours by a margin. All cards SHALL share one background colour rather than being individually tinted. The contrast SHALL be strong enough to read as a distinct panel and quiet enough not to compete with the question's own content, in both the light and dark presentations.
+
+#### Scenario: Questions read as separate panels
+- **WHEN** a questionnaire of any length is presented
+- **THEN** each question sits on a card that contrasts with the page, with a visible gap to the questions above and below it
+
+#### Scenario: Cards share one colour
+- **WHEN** several questions are presented together
+- **THEN** they all carry the same card background, rather than a different colour each
+
+#### Scenario: Card colours follow the presentation
+- **WHEN** the form is presented in its dark variant
+- **THEN** the page and card colours are drawn from a set suited to a dark background rather than inverted light ones
+
+#### Scenario: Card does not obscure content
+- **WHEN** a question is presented on a card
+- **THEN** its prompt, controls, and help text remain legible against it
+
 ### Requirement: Visible progress through the questionnaire
 
-The form SHALL show how far through the questionnaire the responder is, so progress is legible without inferring it from the scrollbar.
+The form SHALL show how far through the questionnaire the responder is as a proportion that can be read at a glance, so progress is legible without counting or inferring it from the scrollbar.
 
 #### Scenario: Progress at the start
 - **WHEN** a questionnaire with no answers is opened
-- **THEN** the indicator shows that none of its questions are answered
+- **THEN** the indicator shows none of its questions answered
 
 #### Scenario: Progress as questions are answered
 - **WHEN** the responder answers a question
-- **THEN** the indicator reflects the new count without any other action
+- **THEN** the indicator advances without any other action
 
 #### Scenario: Progress counts only applicable questions
 - **WHEN** a question is hidden because its condition does not hold
@@ -90,24 +110,8 @@ The form SHALL show how far through the questionnaire the responder is, so progr
 
 #### Scenario: Progress when a conditional question appears
 - **WHEN** answering a question reveals a further question
-- **THEN** the total grows to include it, and the indicator updates accordingly
+- **THEN** the total grows to include it, and the indicator adjusts accordingly
 
-### Requirement: Questions are visually separated
-
-Each question SHALL be presented on its own background band, tinted so that no two adjacent questions share a tint. The tints SHALL be subtle enough not to compete with the question's own content, and SHALL suit the light and dark presentations equally.
-
-#### Scenario: Adjacent questions differ
-- **WHEN** a questionnaire of any length is presented
-- **THEN** no question shares a background tint with the question above or below it
-
-#### Scenario: Tints follow the presentation
-- **WHEN** the form is presented in its dark variant
-- **THEN** the tints are drawn from a set suited to a dark background rather than lightened versions of the light ones
-
-#### Scenario: A hidden question does not consume a tint
-- **WHEN** a question is hidden because its condition does not hold
-- **THEN** the questions on either side of it are still tinted differently from each other
-
-#### Scenario: Tint does not obscure content
-- **WHEN** a question is presented on a tinted band
-- **THEN** its prompt, controls, and help text remain legible against it
+#### Scenario: A questionnaire with everything answered
+- **WHEN** every applicable question carries an answer
+- **THEN** the indicator reads as complete

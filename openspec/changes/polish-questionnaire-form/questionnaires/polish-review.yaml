@@ -6,8 +6,8 @@ intro: |
 
   Note the comment boxes: press the pencil on any question to open one.
 
-status: pending
-submitted_at: null
+status: dismissed
+submitted_at: "2026-09-01T12:31:01+01:00"
 
 questions:
   - id: density

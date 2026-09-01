@@ -131,6 +131,8 @@ nothing and is never reported.
 | `scale`       | a whole number                            | `min` / `max`, default 1–5        |
 | `rank`        | all of `options`, reordered               | drag, or use the arrows           |
 
+Each question sits on its own card, so they stay distinct while you scroll.
+
 Every question also takes a **comment**, whatever its type, answered or not.
 The field rests collapsed behind a small affordance so a page of questions is
 not mostly empty boxes; once a comment exists, the affordance shows the start of
@@ -162,9 +164,9 @@ sidecar to keep in sync.
 Closing the window with unsaved answers asks first. Dismissing writes only the
 status — answers from an earlier session are left alone.
 
-The footer counts how far through you are. Questions hidden by `show_if` are in
-neither the answered nor the outstanding total, so the total moves as conditions
-resolve.
+The footer carries a progress bar and a count. Questions hidden by `show_if` are
+in neither the answered nor the outstanding total, so the total moves as
+conditions resolve.
 
 ## Output
 

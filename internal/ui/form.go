@@ -60,7 +60,8 @@ type form struct {
 	list     *fyne.Container
 	scroll   *container.Scroll
 	summary  *widget.Label
-	progress *widget.Label
+	progress *progressBar
+	counted  *widget.Label
 }
 
 // card is one question: its prompt, its control, its comment box, and the
@@ -71,7 +72,7 @@ type card struct {
 	warning  *widget.Label
 	rank     *rankWidget
 	comment  *commentField
-	band     *band
+	card     *cardBox
 }
 
 func newForm(doc *questionnaire.Document, win fyne.Window) *form {
@@ -130,9 +131,10 @@ func (f *form) header() fyne.CanvasObject {
 
 func (f *form) footer() fyne.CanvasObject {
 	// Progress and outstanding-required are different questions -- "how far
-	// through am I" and "what is stopping me submitting" -- so they get their
-	// own labels rather than one sentence trying to say both.
-	f.progress = widget.NewLabel("")
+	// through am I" and "what is stopping me submitting" -- so a bar answers
+	// the first at a glance and a label answers the second in words.
+	f.progress = newProgressBar()
+	f.counted = captionLabel("")
 	f.summary = widget.NewLabel("")
 	f.summary.Importance = widget.MediumImportance
 	f.summary.Wrapping = fyne.TextWrapWord
@@ -141,7 +143,10 @@ func (f *form) footer() fyne.CanvasObject {
 	submit.Importance = widget.HighImportance
 	dismiss := widget.NewButton("Dismiss", f.requestClose)
 
-	status := container.NewHBox(f.progress, f.summary)
+	// The bar needs a width to be worth reading, so it takes the space the
+	// actions leave rather than shrinking to its content like an HBox item.
+	bar := container.NewCenter(container.NewGridWrap(f.progress.MinSize(), f.progress))
+	status := container.NewHBox(bar, f.counted, f.summary)
 	actions := container.NewHBox(dismiss, submit)
 	return container.NewPadded(container.NewVBox(
 		widget.NewSeparator(),
@@ -185,10 +190,11 @@ func (f *form) buildCard(q *questionnaire.Question) *card {
 	c.warning.Hide()
 	parts = append(parts, c.warning)
 
-	// The tint does the separating a hairline rule was failing to do, so the
-	// separator goes: a band edge and a rule together only look fussy.
-	c.band = newBand(0, container.NewVBox(parts...))
-	c.root = container.NewVBox(c.band)
+	// The card and the gap around it do the separating a hairline rule was
+	// failing to do, so the separator goes: a card edge and a rule together
+	// only look fussy.
+	c.card = newCardBox(container.NewPadded(container.NewVBox(parts...)))
+	c.root = container.NewPadded(c.card)
 	return c
 }
 
@@ -410,37 +416,24 @@ func (f *form) syncVisibility() {
 			c.warning.Hide()
 		}
 	}
-	f.assignTints()
 	if changed && f.list != nil {
 		f.list.Refresh()
 	}
 	f.updateSummary()
 }
 
-// assignTints numbers the bands over the questions actually on screen.
-//
-// Counting hidden questions would let a gated question in the middle leave its
-// two neighbours sharing a tint, which is the one thing the tints exist to
-// prevent.
-func (f *form) assignTints() {
-	next := 0
-	for _, q := range f.doc.Questions {
-		c, ok := f.cards[q.ID]
-		if !ok || c.band == nil || !c.root.Visible() {
-			continue
-		}
-		c.band.SetTint(next)
-		next++
-	}
-}
-
 func (f *form) updateSummary() {
-	if f.summary == nil || f.progress == nil {
+	if f.summary == nil || f.progress == nil || f.counted == nil {
 		return
 	}
+	f.counted.SetText(f.progressText())
 
 	answered, total := f.counts()
-	f.progress.SetText(fmt.Sprintf("%d of %d answered", answered, total))
+	if total == 0 {
+		f.progress.SetValue(0)
+	} else {
+		f.progress.SetValue(float64(answered) / float64(total))
+	}
 
 	missing := len(f.doc.Unanswered())
 	switch missing {
@@ -451,6 +444,13 @@ func (f *form) updateSummary() {
 	default:
 		f.summary.SetText(fmt.Sprintf("· %d required questions left", missing))
 	}
+}
+
+// progressText labels the bar. A bare percentage is hard to act on; the counts
+// say how many questions are actually left.
+func (f *form) progressText() string {
+	answered, total := f.counts()
+	return fmt.Sprintf("%d of %d answered", answered, total)
 }
 
 // counts reports how many of the applicable questions carry an answer.

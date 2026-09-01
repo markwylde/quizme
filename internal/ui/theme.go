@@ -41,15 +41,16 @@ type palette struct {
 	overlay     color.Color
 	scrollBar   color.Color
 
-	// questionTints cycle behind consecutive questions. A hairline rule was not
-	// enough to tell one question from the next while scrolling; a band of
-	// colour is. They are deliberately within a few points of the background --
-	// enough to read as a change, not enough to compete with the content.
-	questionTints []color.Color
+	// card is the panel every question sits on. A hairline rule was not enough
+	// to tell one question from the next while scrolling, and a different tint
+	// per question was worse -- the page read as a swatch book. One shade
+	// against a lightened page, with a margin between, reads as a stack of
+	// cards.
+	card color.Color
 }
 
 var lightPalette = palette{
-	background:  hex(0xFBFAF8),
+	background:  hex(0xFFFEFC),
 	surface:     hex(0xFFFFFF),
 	foreground:  hex(0x1C1B19),
 	muted:       hex(0x8B877F),
@@ -69,18 +70,11 @@ var lightPalette = palette{
 	shadow:      rgba(0x00, 0x00, 0x00, 0x22),
 	overlay:     hex(0xFFFFFF),
 	scrollBar:   rgba(0x1C, 0x1B, 0x19, 0x40),
-	questionTints: []color.Color{
-		hex(0xF4F6FC), // blue
-		hex(0xF1F8F2), // green
-		hex(0xFCF7ED), // amber
-		hex(0xFCF3F4), // rose
-		hex(0xF7F4FC), // violet
-		hex(0xEFF8F8), // teal
-	},
+	card:        hex(0xF3F1EC),
 }
 
 var darkPalette = palette{
-	background:  hex(0x17181A),
+	background:  hex(0x1E2023),
 	surface:     hex(0x1F2124),
 	foreground:  hex(0xE9E7E3),
 	muted:       hex(0x8E9299),
@@ -100,14 +94,7 @@ var darkPalette = palette{
 	shadow:      rgba(0x00, 0x00, 0x00, 0x66),
 	overlay:     hex(0x1F2124),
 	scrollBar:   rgba(0xFF, 0xFF, 0xFF, 0x40),
-	questionTints: []color.Color{
-		hex(0x191C24), // blue
-		hex(0x171D19), // green
-		hex(0x201C15), // amber
-		hex(0x201819), // rose
-		hex(0x1B1823), // violet
-		hex(0x141D1E), // teal
-	},
+	card:        hex(0x141517),
 }
 
 func (t formTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
@@ -192,6 +179,8 @@ func (t formTheme) Size(name fyne.ThemeSizeName) float32 {
 		return 6
 	case theme.SizeNameSelectionRadius:
 		return 5
+	case theme.SizeNameCardRadius:
+		return 8
 	case theme.SizeNameScrollBar:
 		return 12
 	case theme.SizeNameScrollBarSmall:
@@ -208,31 +197,19 @@ func rgba(r, g, b, a uint8) color.Color {
 	return color.NRGBA{R: r, G: g, B: b, A: a}
 }
 
-// tintCount is how many tints a palette cycles through. Both palettes define
-// the same number, which the tests assert.
-const tintCount = 6
-
-// tintProvider is a theme that can colour the band behind a question.
+// cardProvider is a theme that can colour the panel behind a question.
 //
-// The tints are looked up through this rather than as theme colour names,
+// The colour is looked up through this rather than as a theme colour name,
 // because a name the running theme has never heard of is a logged error on
-// every draw. A theme that does not provide tints simply gets none.
-type tintProvider interface {
-	QuestionTint(index int, variant fyne.ThemeVariant) color.Color
+// every draw. A theme that provides no card colour simply gets none.
+type cardProvider interface {
+	QuestionCard(variant fyne.ThemeVariant) color.Color
 }
 
-// QuestionTint returns the background for the nth question on screen, cycling
-// so that no two adjacent questions share one.
-func (t formTheme) QuestionTint(index int, variant fyne.ThemeVariant) color.Color {
-	p := lightPalette
+// QuestionCard returns the background every question's card is painted in.
+func (t formTheme) QuestionCard(variant fyne.ThemeVariant) color.Color {
 	if variant == theme.VariantDark {
-		p = darkPalette
+		return darkPalette.card
 	}
-	if len(p.questionTints) == 0 {
-		return color.Transparent
-	}
-	if index < 0 {
-		index = 0
-	}
-	return p.questionTints[index%len(p.questionTints)]
+	return lightPalette.card
 }
