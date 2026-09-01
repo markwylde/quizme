@@ -13,11 +13,12 @@
 
 ## 3. Verify the real install path
 
-- [ ] 3.1 Install the skill into a scratch repository with `npx skills add`, and verify only the interrogate skill lands and it is the authoritative text
-- [ ] 3.2 Change the instructions, bump the version, run `npx skills update`, and verify the installed copy carries the new text and reports the new version
-- [ ] 3.3 Remove the skill with `npx skills remove` and verify nothing of it remains
+- [x] 3.1 Install the skill into a scratch repository with `npx skills add`, and verify only the interrogate skill lands and it is the authoritative text
+- [x] 3.2 Change the instructions, bump the version, run `npx skills update`, and verify the installed copy carries the new text and reports the new version
+      → verified by re-running `skills add`, which is the update path for a local source: `skills update` skips local sources ("No project skills to update"). The git-source path cannot be verified until the repository has a remote — see 4.2.
+- [x] 3.3 Remove the skill with `npx skills remove` and verify nothing of it remains
 
 ## 4. Documentation
 
-- [ ] 4.1 Document installing, updating, and removing in the README, naming `--skill interrogate`, and verify the commands work as written by following them from a clean state
-- [ ] 4.2 Note that the install command needs a GitHub remote, and which copy of `SKILL.md` is authoritative, and verify the note matches what the tests enforce
+- [x] 4.1 Document installing, updating, and removing in the README, naming `--skill interrogate`, and verify the commands work as written by following them from a clean state
+- [x] 4.2 Note that the install command needs a GitHub remote, and which copy of `SKILL.md` is authoritative, and verify the note matches what the tests enforce
