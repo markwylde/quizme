@@ -6,7 +6,7 @@ license: MIT
 compatibility: Requires the interrogate CLI on PATH (go install github.com/markwylde/interrogate@latest).
 metadata:
   author: markwylde
-  version: "1.0.0"
+  version: "1.0.1"
 ---
 
 # Interrogate
@@ -71,6 +71,10 @@ The user should be able to answer without reconstructing your reasoning first.
   can skip, and you can ask about later.
 - **Keep it short.** Ten questions is a lot to sit down to. If you have thirty,
   you have not finished thinking.
+- **Do not ask the same thing twice.** A conditional "what else would you
+  change?" and an unconditional "anything else?" read as one question asked
+  twice when the condition happens to hold. Before you write it, check the
+  open-ended questions against each other, `show_if` included.
 
 ## The format
 
