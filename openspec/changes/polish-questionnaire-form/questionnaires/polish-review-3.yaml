@@ -1,0 +1,99 @@
+# Round three: cards instead of the rainbow, and a real progress bar.
+title: Polish pass — round three
+intro: |
+  The tints are gone. Every question is now a card in one colour on a
+  lightened page, with a margin between them and rounded corners.
+
+  The progress readout is a bar. I built a custom one — Fyne's own paints
+  its empty track in a faded primary, so nothing-answered read as
+  partly-done.
+
+status: submitted
+submitted_at: "2026-09-01T12:42:54+01:00"
+
+questions:
+  - id: cards
+    type: select
+    prompt: Do the cards do what you wanted?
+    required: true
+    options:
+      - Yes, that's it
+      - Close, but the contrast needs adjusting
+      - Wrong again
+    answer: Yes, that's it
+
+  - id: cards_detail
+    type: textarea
+    prompt: What needs changing?
+    show_if:
+      cards:
+        - Close, but the contrast needs adjusting
+        - Wrong again
+
+  - id: separators
+    type: select
+    prompt: You said dropping the separator lines was wrong — still?
+    help: >-
+      I left them out, because a rule between two cards that already have a
+      gap and an edge looks fussy. Easy to put back if you disagree.
+    required: true
+    options:
+      - Fine without them now
+      - Put them back
+    answer: Fine without them now
+
+  - id: density
+    type: scale
+    prompt: How's the density?
+    help: >-
+      You gave this a 3 last round. Cards cost vertical space — it's about
+      three and a half questions per screen now, down from four and a half
+      with the flat bands. Worth knowing before you rate it.
+    min: 1
+    max: 5
+    required: true
+    answer: 5
+
+  - id: density_fix
+    type: textarea
+    prompt: Where would you take the space from?
+    show_if:
+      density: [1, 2, 3]
+
+  - id: progress_bar
+    type: select
+    prompt: Is the progress bar right?
+    options:
+      - Yes
+      - Make it wider
+      - Drop the count next to it
+      - Something else
+    answer: Make it wider
+    comment: I'd make it the full width of the window and maybe be directly above the bottom footer.
+
+  - id: next
+    type: select
+    prompt: What next?
+    help: >-
+      distribute-interrogate-skill is planned and ready. One task left on
+      this change — the final end-to-end run, which this is.
+    required: true
+    options:
+      - Archive this, then do the plugin
+      - Archive this and stop for now
+      - More polish first
+    answer: More polish first
+
+  - id: more_polish
+    type: textarea
+    prompt: What else?
+    show_if:
+      next: More polish first
+    answer: |
+      Why is there two "What else" and "Anything else" fields? They are essentially the same thing. just a bug on your input? or is this a problem with our app?
+
+      Also, there is a bug with touchpad scrolling. it scrolls perfect, but once it gets over a textarea the scroll stops and i have to move the mouse off the textarea. can we fix this? is this a bug with fyne?
+
+  - id: anything_else
+    type: textarea
+    prompt: Anything else?

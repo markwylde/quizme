@@ -56,7 +56,7 @@ func TestCommentStartsCollapsed(t *testing.T) {
 	if c.Expanded() {
 		t.Error("a comment field should rest collapsed")
 	}
-	if c.Entry().Visible() {
+	if c.FieldVisible() {
 		t.Error("the entry should be hidden while collapsed")
 	}
 	if got := c.toggle.Text; got != "Add comment" {
@@ -69,7 +69,7 @@ func TestCommentOpensOnDemand(t *testing.T) {
 	c := f.cards["name"].comment
 
 	c.Toggle()
-	if !c.Expanded() || !c.Entry().Visible() {
+	if !c.Expanded() || !c.FieldVisible() {
 		t.Error("pressing the toggle should open the field")
 	}
 	if got := c.toggle.Text; got != "Hide comment" {
@@ -77,7 +77,7 @@ func TestCommentOpensOnDemand(t *testing.T) {
 	}
 
 	c.Toggle()
-	if c.Expanded() || c.Entry().Visible() {
+	if c.Expanded() || c.FieldVisible() {
 		t.Error("pressing it again should close the field")
 	}
 }
@@ -303,4 +303,82 @@ func TestProgressBarClampsOutOfRange(t *testing.T) {
 	if got := p.Value(); got != 1 {
 		t.Errorf("Value = %v after setting 5, want 1", got)
 	}
+}
+
+// --- Scrolling over a text field ----------------------------------------
+
+func TestScrollOverATextFieldMovesThePage(t *testing.T) {
+	// Fyne's Entry has an internal scroller that consumes scroll events even
+	// with nothing to scroll, and events do not bubble. Without the shield, a
+	// trackpad scroll stops dead when it crosses a comment box.
+	f, _ := build(t, uiDoc)
+	f.scroll.Resize(fyne.NewSize(600, 400))
+	f.list.Resize(fyne.NewSize(600, 2000))
+	f.scroll.Content.Resize(fyne.NewSize(600, 2000))
+
+	shield := findShield(t, f, "why")
+	before := f.scroll.Offset.Y
+	shield.Scrolled(&fyne.ScrollEvent{Scrolled: fyne.NewDelta(0, -40)})
+
+	if f.scroll.Offset.Y == before {
+		t.Error("scrolling over a text field did not move the page")
+	}
+}
+
+func TestScrollOverATextFieldStopsAtTheEnds(t *testing.T) {
+	f, _ := build(t, uiDoc)
+	f.scroll.Resize(fyne.NewSize(600, 400))
+	f.scroll.Content.Resize(fyne.NewSize(600, 2000))
+	shield := findShield(t, f, "why")
+
+	// Scrolling up at the top must not run past the start of the page.
+	shield.Scrolled(&fyne.ScrollEvent{Scrolled: fyne.NewDelta(0, 500)})
+	if got := f.scroll.Offset.Y; got != 0 {
+		t.Errorf("offset = %v after scrolling up at the top, want 0", got)
+	}
+
+	// Nor past the end.
+	shield.Scrolled(&fyne.ScrollEvent{Scrolled: fyne.NewDelta(0, -99999)})
+	if got := f.scroll.Offset.Y; got > 1600 {
+		t.Errorf("offset = %v, want it capped at the end of the page", got)
+	}
+}
+
+func TestScrollOverATextFieldIgnoresSideways(t *testing.T) {
+	f, _ := build(t, uiDoc)
+	f.scroll.Resize(fyne.NewSize(600, 400))
+	f.scroll.Content.Resize(fyne.NewSize(600, 2000))
+	findShield(t, f, "why").Scrolled(&fyne.ScrollEvent{Scrolled: fyne.NewDelta(120, 0)})
+	if got := f.scroll.Offset.X; got != 0 {
+		t.Errorf("offset.X = %v, want the page never to scroll sideways", got)
+	}
+}
+
+func TestEveryMultiLineFieldIsShielded(t *testing.T) {
+	f, doc := build(t, uiDoc)
+	for _, q := range doc.Questions {
+		c := f.cards[q.ID]
+		// Every comment field is multi-line, whatever the question's type.
+		if _, ok := search[*scrollShield](c.comment.shielded(), first[*scrollShield]()); !ok {
+			t.Errorf("the comment field for %q is not shielded", q.ID)
+		}
+		if q.Type == questionnaire.TypeTextarea {
+			if _, ok := search[*scrollShield](c.root, first[*scrollShield]()); !ok {
+				t.Errorf("the textarea for %q is not shielded", q.ID)
+			}
+		}
+	}
+}
+
+func findShield(t *testing.T, f *form, id string) *scrollShield {
+	t.Helper()
+	c, ok := f.cards[id]
+	if !ok {
+		t.Fatalf("no card for %q", id)
+	}
+	found, ok := search[*scrollShield](c.root, first[*scrollShield]())
+	if !ok {
+		t.Fatalf("no scroll shield in the card for %q", id)
+	}
+	return found
 }

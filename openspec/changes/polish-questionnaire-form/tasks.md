@@ -45,9 +45,15 @@
 - [x] 6.1 Replace the counted readout with a progress bar over the applicable questions, and verify it reads empty on a fresh questionnaire and full when everything applicable is answered
 - [x] 6.2 Verify the bar advances as questions are answered and adjusts when a conditional question appears
 
-## 7. Delivery
+## 7. Scrolling over text fields
 
-- [x] 7.1 Refresh the rendered previews and verify the density improvement by screenshot review with the user
-- [x] 7.2 Update the README's form screenshot and document `--validate`, and verify the README's examples still pass their own tests
-- [x] 7.3 Note in the skill that a questionnaire can be checked with `--validate`, and verify the skill's tests still pass
-- [ ] 7.4 Run the full suite and one real interrogation, and verify formatting preservation still holds end to end
+- [x] 7.1 Shield every multi-line field so a scroll gesture over it moves the page, and verify a scroll over a textarea and over a comment box both scroll the questionnaire
+- [x] 7.2 Clamp the forwarded scroll to the ends of the page and ignore sideways movement, and verify neither runs past the content
+- [ ] 7.3 Verify by hand that clicking, selecting, and typing in a shielded field are unaffected
+
+## 8. Delivery
+
+- [x] 8.1 Refresh the rendered previews and verify the density improvement by screenshot review with the user
+- [x] 8.2 Update the README's form screenshot and document `--validate`, and verify the README's examples still pass their own tests
+- [x] 8.3 Note in the skill that a questionnaire can be checked with `--validate`, and verify the skill's tests still pass
+- [ ] 8.4 Run the full suite and one real interrogation, and verify formatting preservation still holds end to end

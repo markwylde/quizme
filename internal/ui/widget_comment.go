@@ -24,13 +24,30 @@ type commentField struct {
 	toggle   *widget.Button
 	root     *fyne.Container
 	expanded bool
+
+	// shield keeps the page scrolling while the pointer is over the field.
+	shield func(fyne.CanvasObject) fyne.CanvasObject
+	// wrapped is what actually goes in the layout: the entry, shielded.
+	wrapped fyne.CanvasObject
+}
+
+// shielded returns the entry wrapped so it does not swallow page scrolling.
+func (c *commentField) shielded() fyne.CanvasObject {
+	if c.wrapped != nil {
+		return c.wrapped
+	}
+	c.wrapped = c.entry
+	if c.shield != nil {
+		c.wrapped = c.shield(c.entry)
+	}
+	return c.wrapped
 }
 
 // previewLimit is how much of a comment the collapsed toggle shows.
 const previewLimit = 44
 
-func newCommentField(current string, onChange func(string)) *commentField {
-	c := &commentField{}
+func newCommentField(current string, onChange func(string), shield func(fyne.CanvasObject) fyne.CanvasObject) *commentField {
+	c := &commentField{shield: shield}
 
 	c.entry = widget.NewMultiLineEntry()
 	c.entry.SetPlaceHolder("Anything worth saying about this answer")
@@ -51,7 +68,7 @@ func newCommentField(current string, onChange func(string)) *commentField {
 	// A question that arrives with a comment opens showing it: the responder
 	// wrote it last time and should not have to hunt for it.
 	c.expanded = strings.TrimSpace(current) != ""
-	c.root = container.NewVBox(c.toggle, c.entry)
+	c.root = container.NewVBox(c.toggle, c.shielded())
 	c.apply()
 
 	return c
@@ -72,11 +89,16 @@ func (c *commentField) Expanded() bool { return c.expanded }
 // Entry exposes the text field, for tests and for focus handling.
 func (c *commentField) Entry() *widget.Entry { return c.entry }
 
+// FieldVisible reports whether the text field is on screen. The entry is
+// wrapped in a scroll shield, and it is the wrapper that gets hidden, so asking
+// the entry itself would always say yes.
+func (c *commentField) FieldVisible() bool { return c.shielded().Visible() }
+
 func (c *commentField) apply() {
 	if c.expanded {
-		c.entry.Show()
+		c.shielded().Show()
 	} else {
-		c.entry.Hide()
+		c.shielded().Hide()
 	}
 	c.relabel()
 	c.root.Refresh()

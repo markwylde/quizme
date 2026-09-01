@@ -6,7 +6,8 @@ The first questionnaire answered with `interrogate` was also a review of it. The
 
 - **The header scrolls with the page.** Title and intro are read once, at the start; pinning them costs a fifth of the window for the rest of the session. The footer stays pinned, because the actions are needed from anywhere.
 - **Comment boxes collapse.** Each question shows a quiet affordance instead of an open field; the field appears when the responder wants it, and a question that already carries a comment opens with it visible. Every question still accepts a comment — the capability is unchanged, only its resting state.
-- **A progress bar.** The responder can see how far through the questionnaire they are at a glance, without reading a count or judging it by the scrollbar.
+- **A progress bar** across the top edge of the footer. The responder can see how far through the questionnaire they are at a glance, without reading a count or judging it by the scrollbar.
+- **Scrolling no longer stops over a text field.** Fyne gives every wrapping multi-line entry an internal scroller that consumes scroll events whether or not it has anywhere to scroll, and events do not bubble, so a trackpad scroll dies the moment the pointer crosses a comment box.
 - **Each question sits on its own card.** A hairline separator turned out not to be enough to tell one question from the next when scrolling. Every question gets a panel in a single colour that contrasts with a lightened page, separated by a margin — one shade, not a cycle of them, so the page reads as a stack of cards rather than a swatch book.
 - **`interrogate --validate <path>`** checks a questionnaire and exits without opening a window, reporting the same errors it would refuse to open on.
 

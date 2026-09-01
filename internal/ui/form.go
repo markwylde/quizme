@@ -143,15 +143,15 @@ func (f *form) footer() fyne.CanvasObject {
 	submit.Importance = widget.HighImportance
 	dismiss := widget.NewButton("Dismiss", f.requestClose)
 
-	// The bar needs a width to be worth reading, so it takes the space the
-	// actions leave rather than shrinking to its content like an HBox item.
-	bar := container.NewCenter(container.NewGridWrap(f.progress.MinSize(), f.progress))
-	status := container.NewHBox(bar, f.counted, f.summary)
+	status := container.NewHBox(f.counted, f.summary)
 	actions := container.NewHBox(dismiss, submit)
-	return container.NewPadded(container.NewVBox(
-		widget.NewSeparator(),
-		container.NewBorder(nil, nil, status, actions),
-	))
+
+	// The bar spans the window along the top edge of the footer, where it also
+	// does the job the separator was doing.
+	return container.NewVBox(
+		f.progress,
+		container.NewPadded(container.NewBorder(nil, nil, status, actions)),
+	)
 }
 
 // buildCard lays out one question. Every question gets a comment box, whatever
@@ -182,7 +182,7 @@ func (f *form) buildCard(q *questionnaire.Question) *card {
 
 	parts = append(parts, f.control(q, c))
 
-	c.comment = newCommentField(q.Comment, func(s string) { q.Comment = s })
+	c.comment = newCommentField(q.Comment, func(s string) { q.Comment = s }, f.scrollable)
 	parts = append(parts, c.comment.root)
 
 	c.warning = widget.NewLabel("")
@@ -267,7 +267,41 @@ func (f *form) textareaControl(q *questionnaire.Question) fyne.CanvasObject {
 		entry.SetText(current)
 	}
 	entry.OnChanged = func(s string) { f.set(q, s) }
-	return entry
+	return f.scrollable(entry)
+}
+
+// scrollable shields a multi-line field so that scrolling the page over it
+// keeps working. See scrollThrough for why this is needed.
+func (f *form) scrollable(field fyne.CanvasObject) fyne.CanvasObject {
+	return newScrollThrough(field, f.scrollPage)
+}
+
+// scrollPage moves the questionnaire under the responder, matching what the
+// page scroller would have done with the event itself.
+func (f *form) scrollPage(e *fyne.ScrollEvent) {
+	if f.scroll == nil {
+		return
+	}
+	offset := f.scroll.Offset
+	offset.Y -= e.Scrolled.DY
+	offset.X -= e.Scrolled.DX
+
+	limit := f.scroll.Content.Size().Height - f.scroll.Size().Height
+	if limit < 0 {
+		limit = 0
+	}
+	if offset.Y < 0 {
+		offset.Y = 0
+	}
+	if offset.Y > limit {
+		offset.Y = limit
+	}
+	if offset.X != 0 {
+		offset.X = 0 // the page never scrolls sideways
+	}
+
+	f.scroll.Offset = offset
+	f.scroll.Refresh()
 }
 
 // numberControl accepts free text but only records a value the question's

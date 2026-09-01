@@ -115,3 +115,19 @@ The form SHALL show how far through the questionnaire the responder is as a prop
 #### Scenario: A questionnaire with everything answered
 - **WHEN** every applicable question carries an answer
 - **THEN** the indicator reads as complete
+
+### Requirement: Scrolling the page is never trapped by a field
+
+Scrolling the questionnaire SHALL continue to work wherever the pointer rests, including over a text field. A field that has nothing of its own to scroll SHALL NOT absorb the gesture.
+
+#### Scenario: Scrolling across a text field
+- **WHEN** the responder scrolls the page and the pointer passes over a multi-line text field
+- **THEN** the page keeps scrolling, without the responder having to move the pointer aside
+
+#### Scenario: Scrolling stops at the ends of the page
+- **WHEN** the responder scrolls up at the top of the questionnaire, or down at the bottom
+- **THEN** the page stops rather than running past its content
+
+#### Scenario: The field still behaves as a field
+- **WHEN** the responder clicks into, selects text in, or types into a shielded field
+- **THEN** it behaves exactly as it would without the shield
