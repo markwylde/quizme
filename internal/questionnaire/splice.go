@@ -51,7 +51,6 @@ func insertLines(line int, lines []string) edit {
 	return edit{start: pt{line, 1}, end: pt{line, 1}, lines: lines}
 }
 
-
 // Render produces the document's new contents with the given status and the
 // answers currently held on its questions.
 //
