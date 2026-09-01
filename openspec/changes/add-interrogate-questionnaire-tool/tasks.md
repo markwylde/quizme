@@ -51,15 +51,15 @@
 
 ## 7. Skill
 
-- [ ] 7.1 Write the `interrogate` skill covering when to use a questionnaire versus asking in conversation, and verify it names the single-question and branching-enquiry exceptions from the spec
-- [ ] 7.2 Document the questionnaire path convention and authoring guidance, and verify the skill produces a valid questionnaire for a sample change end to end
+- [x] 7.1 Write the `interrogate` skill covering when to use a questionnaire versus asking in conversation, and verify it names the single-question and branching-enquiry exceptions from the spec
+- [x] 7.2 Document the questionnaire path convention and authoring guidance, and verify the skill produces a valid questionnaire for a sample change end to end
 - [ ] 7.3 Document background launch and resume-on-exit, plus status-file recovery when the launch is lost, and verify by running the flow against a real questionnaire
-- [ ] 7.4 Document outcome handling for submitted, saved, and dismissed, including treating comments as more precise than the selected option, and verify each branch against a fixture questionnaire
-- [ ] 7.5 Document the not-installed fallback and verify the skill's guidance holds when `interrogate` is absent from the path
+- [x] 7.4 Document outcome handling for submitted, saved, and dismissed, including treating comments as more precise than the selected option, and verify each branch against a fixture questionnaire
+- [x] 7.5 Document the not-installed fallback and verify the skill's guidance holds when `interrogate` is absent from the path
 
 ## 8. Delivery
 
-- [ ] 8.1 Verify `go install` puts `interrogate` on the path and the binary runs a questionnaire from an arbitrary working directory
+- [x] 8.1 Verify `go install` puts `interrogate` on the path and the binary runs a questionnaire from an arbitrary working directory
 - [x] 8.2 Verify cross-platform builds compile for macOS, Linux, and Windows
-- [ ] 8.3 Write the README covering install, the questionnaire format with a worked example, and the exit codes, and verify a reader can author and run a questionnaire from it alone
+- [x] 8.3 Write the README covering install, the questionnaire format with a worked example, and the exit codes, and verify a reader can author and run a questionnaire from it alone
 - [ ] 8.4 Run one real end-to-end interrogation driven by an opsx agent on an actual change and verify the answers land in the file with formatting preserved
