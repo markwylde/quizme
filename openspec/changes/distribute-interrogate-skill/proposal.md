@@ -1,13 +1,13 @@
 ## Why
 
-The skill lives at `.claude/skills/interrogate/SKILL.md` in this repository, which is the one place it is least needed: this is where the tool is built, not where questions get asked. Every other repository an agent works in needs its own copy, and copying a file by hand means the copies drift — a skill updated here silently leaves stale instructions behind everywhere else. Packaging it as a Claude Code plugin makes installing it one command and updating it another.
+The skill lives at `.claude/skills/interrogate/SKILL.md` in this repository, which is the one place it is least needed: this is where the tool is built, not where questions get asked. Every other repository an agent works in needs its own copy, and copying a file by hand means the copies drift — a skill updated here silently leaves stale instructions behind everywhere else. It needs an install command and an update command.
 
 ## What Changes
 
-- Package the skill as a **Claude Code plugin**, so it can be installed into any repository or user configuration from this repository rather than copied.
-- Add the plugin manifest and directory layout a plugin requires, with the existing `SKILL.md` as its payload.
-- Version the plugin, so an installed copy can be identified and updated rather than guessed at.
-- Document installing, updating, and removing it in the README, replacing the current implicit "it is in this repo somewhere".
+- Distribute the skill through **`npx skills`** (`vercel-labs/skills`), the cross-agent skill installer: `npx skills add markwylde/interrogate --skill interrogate` puts it wherever the reader's agent looks for skills, and `npx skills update` refreshes it.
+- Move the skill to the layout that installer discovers — `skills/<name>/SKILL.md` at the repository root — and make that copy the authoritative one.
+- Stop committing the copy under `.claude/`. It exists only so this repository's own agents see the skill without installing it, so it becomes a generated, ignored artefact rather than a second file to keep in step.
+- Document installing, updating, and removing in the README.
 - **The skill's content is unchanged.** This is packaging: what the agent is told to do stays exactly as specified.
 
 ## Capabilities
@@ -21,12 +21,13 @@ _None._
 
 ## Impact
 
-- New plugin manifest and layout at the repository root, alongside the existing `.claude/skills/interrogate/`.
-- The two copies of the skill must not diverge: whichever becomes the source, the other has to be generated from or point at it, and something has to fail when they disagree.
+- `skills/interrogate/SKILL.md` becomes the authoritative copy; `.claude/skills/interrogate/` becomes generated and git-ignored.
 - README gains install, update, and remove instructions.
+- The repository needs a GitHub remote before `npx skills add markwylde/interrogate` resolves for anyone else.
 - No change to the Go binary, the questionnaire format, or the form.
 
 ## Non-goals
 
-- Publishing to any marketplace or registry. Installing from this repository is enough.
-- Bundling the `interrogate` binary itself into the plugin. The plugin carries the skill; the binary is still `go install`, and the skill already handles the case where it is missing.
+- Publishing to npm. The installer reads the repository directly; there is nothing to publish.
+- A Claude Code plugin. It was the original plan, but it can only ship a whole repository directory — 2.6 MB of fonts, Go source and unrelated skills for an 8 KB file — and only serves one agent.
+- Bundling the `interrogate` binary. The skill travels; the binary is still `go install`, and the skill already handles the case where it is missing.

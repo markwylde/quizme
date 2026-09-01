@@ -9,3 +9,7 @@
 
 # macOS
 .DS_Store
+
+# Generated from skills/interrogate/SKILL.md by `make skill`, so this
+# repository's own agents see the skill without installing it.
+/.claude/skills/interrogate/

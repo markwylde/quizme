@@ -1,23 +1,23 @@
-## 1. Plugin layout
+## 1. Layout
 
 - [x] 1.1 Move `SKILL.md` to `skills/interrogate/SKILL.md` as the authoritative copy, and verify the existing skill tests still pass against the new path
-- [x] 1.2 Add `.claude-plugin/plugin.json` with the plugin's name, description, version, and author, and verify it parses as JSON and matches the fields a real installed plugin carries
-- [x] 1.3 Add `.claude-plugin/marketplace.json` declaring this repository as a single-plugin marketplace, and verify it parses and names the plugin at the root
+- [x] 1.2 Verify `npx skills` discovers the skill from that path by listing it against this repository
+- [x] 1.3 Remove the Claude plugin manifests, and verify nothing left in the repository refers to them
 
 ## 2. One source of truth
 
-- [x] 2.1 Generate `.claude/skills/interrogate/SKILL.md` from the authoritative copy and verify the two files are byte-identical
-- [x] 2.2 Add a test asserting the copies agree, whose failure names the authoritative file and how to regenerate, and verify it fails when one copy is edited
-- [x] 2.3 Add a test asserting the `SKILL.md` frontmatter version matches `plugin.json`, and verify it fails when only one is bumped
-- [x] 2.4 Add a make target that regenerates the copy, and verify running it after an edit makes the tests pass again
+- [x] 2.1 Git-ignore the generated copy under `.claude/skills/interrogate/` and stop tracking it, and verify a fresh clone carries exactly one copy of the skill
+- [x] 2.2 Keep the `make skill` target that regenerates the copy, and verify running it after an edit reproduces the authoritative file byte for byte
+- [x] 2.3 Make the divergence test skip when no copy has been generated and fail when a generated copy differs, and verify both behaviours
+- [x] 2.4 Assert the skill's frontmatter declares a version, and verify the test fails when it is missing
 
 ## 3. Verify the real install path
 
-- [ ] 3.1 Install the plugin into a scratch repository from this one and verify an agent there is offered the interrogate skill
-- [ ] 3.2 Change the instructions, bump the version, update the installed copy, and verify it reports the new version and carries the new text
-- [ ] 3.3 Remove the plugin from the scratch repository and verify nothing of the skill remains
+- [ ] 3.1 Install the skill into a scratch repository with `npx skills add`, and verify only the interrogate skill lands and it is the authoritative text
+- [ ] 3.2 Change the instructions, bump the version, run `npx skills update`, and verify the installed copy carries the new text and reports the new version
+- [ ] 3.3 Remove the skill with `npx skills remove` and verify nothing of it remains
 
 ## 4. Documentation
 
-- [ ] 4.1 Document installing, updating, and removing the plugin in the README, and verify the commands work as written by following them from a clean state
-- [ ] 4.2 Note in the README which copy of `SKILL.md` is authoritative, and verify the note matches what the tests enforce
+- [ ] 4.1 Document installing, updating, and removing in the README, naming `--skill interrogate`, and verify the commands work as written by following them from a clean state
+- [ ] 4.2 Note that the install command needs a GitHub remote, and which copy of `SKILL.md` is authoritative, and verify the note matches what the tests enforce

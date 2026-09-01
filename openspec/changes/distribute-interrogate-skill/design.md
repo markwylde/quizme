@@ -1,69 +1,71 @@
 ## Context
 
-See proposal.md for why. The shape of the work is set by how Claude Code plugins actually load, confirmed against the official marketplace already on this machine:
+See proposal.md for why. The approach changed once the packaging was tried for real, so the reasoning below records both what was rejected and why.
+
+The first plan was a Claude Code plugin. It works — the plugin installs, reports its version, and exposes the skill — but a plugin ships a whole repository directory. Installing it copied 2.6 MB into the plugin cache: the Go source, 1.6 MB of bundled fonts, `openspec/`, every test file, and this repository's own `.claude/skills/` including seven unrelated OpenSpec skills. Restructuring into `plugins/interrogate/` would have fixed the size, at the cost of a second manifest, a second version to bump, and a distribution that only ever serves Claude Code.
+
+`npx skills` (`vercel-labs/skills`) reads a repository, finds `SKILL.md` files, and copies or symlinks the ones you pick into whichever agent's skills directory you name — `.claude/skills/` for Claude Code, `.agents/skills/` for Codex and Cursor, and so on for some seventy-odd others. Installing the same skill this way copied 8 KB.
 
 ```
-  <repo>/
-    .claude-plugin/
-      plugin.json          name, description, version, author
-      marketplace.json     makes the repo installable by name
-    skills/
-      interrogate/SKILL.md the payload
+  plugin                       npx skills
+  ------                       ----------
+  add marketplace              npx skills add <repo> --skill interrogate
+  install plugin
+  2.6 MB, whole repo           8 KB, one file
+  Claude Code                  77+ agents
 ```
-
-A plugin is installed by adding its repository as a marketplace and then installing the plugin from it. Nothing is published to a registry; the repository is the distribution.
-
-The complication is that this repository already has the skill at `.claude/skills/interrogate/SKILL.md`, where its own agents pick it up. A plugin payload at `skills/interrogate/SKILL.md` would be a second copy of the same file.
 
 ## Goals / Non-Goals
 
 **Goals:**
 - Install into another repository in one command, update in another.
-- One authoritative copy of the instructions, with divergence caught by the build rather than discovered in use.
+- One committed copy of the instructions, so there is nothing to drift.
 - An installed copy that can be identified by version.
 
 **Non-Goals:**
-- Publishing to any marketplace or registry beyond this repository.
-- Bundling the binary. The plugin carries the skill; `interrogate` is still `go install`, and the skill already covers it being missing.
+- Publishing to npm, or to any registry. The repository is the distribution.
+- Supporting both a plugin and the installer. One path, documented once.
 - Any change to what the skill tells an agent to do.
 
 ## Decisions
 
-### The plugin payload is authoritative; the repo's own copy is generated
+### `skills/interrogate/SKILL.md` is the authoritative copy
 
-`skills/interrogate/SKILL.md` becomes the source. `.claude/skills/interrogate/SKILL.md` becomes a copy generated from it, with a Go test asserting the two are byte-identical.
+That is the layout `npx skills` discovers, and it is the file other people receive, so it is the one to edit and review.
 
-*Why this direction:* the plugin is the artefact other people consume, so it should be the thing that is edited and reviewed. The local copy exists only so this repository's own agents see the skill without installing the plugin into it.
+*Verified rather than assumed:* running the installer against this repository listed `interrogate` from that path, and a real install into a scratch repository produced `.claude/skills/interrogate/SKILL.md` and nothing else.
 
-*Why not a symlink:* it would work on macOS and Linux and quietly not on Windows checkouts, and a plugin payload that is a symlink is a poor thing to ship.
+### The copy under `.claude/` is generated and ignored
 
-*Why not drop the local copy:* then the one repository where the skill is developed is the one place it cannot be exercised, which is how stale instructions survive.
+`.claude/skills/interrogate/SKILL.md` is what this repository's own agents read, because that is where Claude Code looks. It is produced by `make skill` and git-ignored.
 
-*Enforcement:* a test in the existing suite reads both files and fails on any difference, naming which to regenerate. The existing skill tests already parse `SKILL.md` and check its examples against the tool; they move to the authoritative path and keep working.
+*Why not commit it:* two committed copies of the same instructions is a drift problem that needs a test to police. An ignored copy cannot be shipped stale, because it is never shipped at all.
 
-### The repository is its own single-plugin marketplace
+*Why not a symlink:* it would work on macOS and Linux and quietly not on a Windows checkout.
 
-`.claude-plugin/marketplace.json` lists one plugin, whose files sit at the repository root. Installing is `/plugin marketplace add markwylde/interrogate` then `/plugin install interrogate@interrogate`.
+*Why keep it at all:* otherwise the one repository where the skill is developed is the one place it cannot be exercised, which is how stale instructions survive.
 
-*Why root rather than `plugins/interrogate/`:* a nested layout is for a marketplace carrying several plugins. This repository carries one, and the flatter layout means the payload path is short enough to be obvious.
+*Consequence:* the divergence test skips on a fresh clone where the copy does not exist yet, and asserts equality for anyone who has generated one. That is the right shape — it catches a hand-edited copy without failing a checkout that simply has not run `make skill`.
 
-*Trade-off:* if a second plugin is ever wanted here, the layout has to move. That is a rename, and the version number is what makes it survivable.
+### The version lives only in the skill's frontmatter
 
-### The version is set by hand, in one place
+`metadata.version` in `SKILL.md` travels with the file, so an installed copy reports the version it actually carries.
 
-`plugin.json` carries the version, and the `SKILL.md` frontmatter's `metadata.version` is checked against it by the same test that checks the copies agree.
+*Why one place:* the plugin plan had the version in both `plugin.json` and the frontmatter, needing a test to keep them equal. With no manifest there is nothing to disagree with.
 
-*Why not derive it from git tags:* the plugin is installed from a checkout of a branch, not from a release artefact, so a tag is not reliably present. A literal in the manifest is what an installed copy actually reports.
+### Discovery finds more than our skill, and that is fine
 
-*Consequence:* bumping the version is a step in the release routine, and the test catches a `SKILL.md` bumped without the manifest.
+`npx skills add markwylde/interrogate` with no `--skill` lists seven skills, because this repository also carries the OpenSpec skills under `.claude/`. The documented command names `--skill interrogate`.
+
+*Alternative considered:* moving the OpenSpec skills out. They are this repository's own tooling and belong where their own workflow put them; contorting the repo to tidy one listing is the wrong trade.
 
 ## Risks / Trade-offs
 
-- **Two copies drift anyway**, because the test is only run when tests are run. → It runs in the same `go test ./...` as everything else, which the tasks already require before delivery.
-- **The generated copy gets edited by hand**, since nothing physically prevents it. → The failure message names which file is authoritative and how to regenerate, so the mistake costs one command.
-- **Plugin manifest fields change under us.** → The layout was read from the installed official marketplace rather than from memory, and the install path is verified for real in the tasks rather than assumed.
-- **Someone installs the plugin without the binary.** → Already handled: the skill's not-installed requirement tells the agent to give the install line and fall back to conversation.
+- **`npx skills` is third-party, and could change or go away.** → A `SKILL.md` in a conventional location is portable by hand whatever happens to the installer; the file is the artefact, not the packaging.
+- **No GitHub remote yet**, so the documented install command does not resolve for anyone else. → Called out in the tasks and the README; installing from a local path works meanwhile and is what the tasks verify.
+- **The generated copy gets edited by hand.** → The test names which file is authoritative and how to regenerate.
+- **Someone installs the skill without the binary.** → Already handled: the skill's not-installed requirement tells the agent to give the install line and fall back to conversation.
 
 ## Open Questions
 
-- Whether to also expose a `/interrogate` slash command alongside the skill. It would be a thin wrapper over the same instructions, and can be added later without changing the layout or the specs.
+- Whether to publish the repository under a `skills.sh` listing so it is discoverable by `npx skills find`. Independent of the layout, and can be done later.
