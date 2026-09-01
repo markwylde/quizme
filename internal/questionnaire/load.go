@@ -130,13 +130,29 @@ func decodeQuestion(src []string, item *yaml.Node, index int, span [2]int, errs 
 		return nil
 	}
 
+	if _, _, v := mapGet(item, "<<"); v != nil {
+		errs.addf("line %d: merge keys (`<<`) are not supported; write each question out in full", item.Line)
+		return nil
+	}
+
 	q := &Question{}
 	q.pos = questionPos{
 		startLine: span[0],
 		endLine:   span[1],
 		indent:    item.Column - 1,
-		answer:    mapKeyRange(src, item, "answer", span[1]),
-		comment:   mapKeyRange(src, item, "comment", span[1]),
+	}
+	if item.Style&yaml.FlowStyle != 0 {
+		// A flow mapping has no lines of its own to replace; record where each
+		// entry sits between the braces instead.
+		fp, ok := scanFlow(src, item)
+		if !ok {
+			errs.addf("line %d: could not find the end of the flow mapping for this question", item.Line)
+			return nil
+		}
+		q.pos.flow = &fp
+	} else {
+		q.pos.answer = mapKeyRange(src, item, "answer", span[1])
+		q.pos.comment = mapKeyRange(src, item, "comment", span[1])
 	}
 
 	decodeString(item, "id", &q.ID, errs)

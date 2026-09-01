@@ -261,3 +261,20 @@ func TestLoadMissingFile(t *testing.T) {
 		t.Errorf("err = %v, want a not-exist error", err)
 	}
 }
+
+func TestMergeKeysRejectedClearly(t *testing.T) {
+	// Anchors and merge keys would make an answer's position ambiguous, so they
+	// are refused outright rather than half-supported.
+	got := loadErr(t, `
+title: t
+defaults: &defaults
+  type: text
+questions:
+  - id: a
+    <<: *defaults
+    prompt: A
+`)
+	if !strings.Contains(got, "merge keys") {
+		t.Errorf("error = %q, want it to explain that merge keys are unsupported", got)
+	}
+}

@@ -15,14 +15,14 @@
 
 ## 3. In-place answer writing
 
-- [ ] 3.1 Implement locating each question's line range and any existing `answer` / `comment` keys from `yaml.Node` positions, and verify positions are correct for nested sequences and varied indentation
-- [ ] 3.2 Implement replacing an existing `answer` or `comment` value in place and verify a golden-file test shows only those lines changed
-- [ ] 3.3 Implement inserting a new `answer` or `comment` block at the correct indent within a question and verify a golden-file test shows surrounding content untouched
-- [ ] 3.4 Implement multi-line answers as block scalars and verify a `textarea` answer containing blank lines and a colon round-trips correctly
-- [ ] 3.5 Implement removing an `answer` or `comment` key when a value is cleared or its question becomes hidden, and verify no orphaned keys remain
-- [ ] 3.6 Implement top-level `status` and `submitted_at` writing, creating the keys if absent, and verify each of the four status values is written correctly
-- [ ] 3.7 Implement atomic write via temp file and rename and verify an injected mid-write failure leaves the original file byte-identical
-- [ ] 3.8 Build a golden-file suite covering YAML comments, blank lines, quoting styles, CRLF line endings, and re-answering an already-answered file, and verify every non-owned byte is preserved in each case
+- [x] 3.1 Implement locating each question's line range and any existing `answer` / `comment` keys from `yaml.Node` positions, and verify positions are correct for nested sequences and varied indentation
+- [x] 3.2 Implement replacing an existing `answer` or `comment` value in place and verify a golden-file test shows only those lines changed
+- [x] 3.3 Implement inserting a new `answer` or `comment` block at the correct indent within a question and verify a golden-file test shows surrounding content untouched
+- [x] 3.4 Implement multi-line answers as block scalars and verify a `textarea` answer containing blank lines and a colon round-trips correctly
+- [x] 3.5 Implement removing an `answer` or `comment` key when a value is cleared or its question becomes hidden, and verify no orphaned keys remain
+- [x] 3.6 Implement top-level `status` and `submitted_at` writing, creating the keys if absent, and verify each of the four status values is written correctly
+- [x] 3.7 Implement atomic write via temp file and rename and verify an injected mid-write failure leaves the original file byte-identical
+- [x] 3.8 Build a golden-file suite covering YAML comments, blank lines, quoting styles, CRLF line endings, and re-answering an already-answered file, and verify every non-owned byte is preserved in each case
 
 ## 4. CLI shell
 

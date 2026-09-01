@@ -26,12 +26,16 @@ type documentPos struct {
 
 // questionPos locates one question's block and the two keys within it that
 // belong to this tool.
+//
+// A question written as a flow mapping carries flow instead of the two key
+// ranges: its entries are spliced by column, not by line.
 type questionPos struct {
 	startLine int
 	endLine   int
 	indent    int
 	answer    keyRange
 	comment   keyRange
+	flow      *flowPos
 }
 
 // lines splits src into lines without their terminators. A trailing newline
