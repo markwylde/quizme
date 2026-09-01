@@ -4,6 +4,7 @@
 // Usage:
 //
 //	interrogate path/to/questionnaire.yaml
+//	interrogate --validate path/to/questionnaire.yaml
 //
 // The exit code reports the outcome, so a caller can branch on it without
 // parsing anything:
@@ -52,15 +53,23 @@ func present(doc *questionnaire.Document) (questionnaire.Status, error) {
 }
 
 func run(args []string, stdout, stderr io.Writer, show presenter) int {
-	path, err := parseArgs(args, stderr)
+	opts, err := parseArgs(args, stderr)
 	if err != nil {
 		return exitError
 	}
+	path := opts.path
 
 	doc, err := questionnaire.Load(path)
 	if err != nil {
 		fmt.Fprintf(stderr, "interrogate: %s could not be read as a questionnaire:\n%v\n", path, err)
 		return exitError
+	}
+
+	if opts.validate {
+		// Loading is the whole check, and it has already happened. Nothing is
+		// presented and nothing is written, so the file is left as found.
+		fmt.Fprintf(stderr, "interrogate: %s is a valid questionnaire (%d questions)\n", path, len(doc.Questions))
+		return exitSubmitted
 	}
 
 	status, err := show(doc)
@@ -95,30 +104,48 @@ func run(args []string, stdout, stderr io.Writer, show presenter) int {
 	}
 }
 
-func parseArgs(args []string, stderr io.Writer) (string, error) {
+// options is one parsed invocation.
+type options struct {
+	path string
+	// validate checks the questionnaire and stops, without presenting it. It is
+	// for a caller checking a file it has just written -- a plain run already
+	// validates before it opens anything.
+	validate bool
+}
+
+func parseArgs(args []string, stderr io.Writer) (options, error) {
 	fs := flag.NewFlagSet("interrogate", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	fs.Usage = func() { fmt.Fprint(stderr, usage) }
 
+	var opts options
+	fs.BoolVar(&opts.validate, "validate", false, "check the questionnaire and exit, without opening a window")
+
 	if err := fs.Parse(args); err != nil {
-		return "", err
+		return options{}, err
 	}
 	switch fs.NArg() {
 	case 1:
-		return fs.Arg(0), nil
+		opts.path = fs.Arg(0)
+		return opts, nil
 	case 0:
 		fmt.Fprint(stderr, "interrogate: no questionnaire given\n\n"+usage)
-		return "", errors.New("no questionnaire given")
+		return options{}, errors.New("no questionnaire given")
 	default:
 		fmt.Fprintf(stderr, "interrogate: expected one questionnaire, got %d\n\n%s", fs.NArg(), usage)
-		return "", errors.New("too many arguments")
+		return options{}, errors.New("too many arguments")
 	}
 }
 
-const usage = `usage: interrogate <questionnaire.yaml>
+const usage = `usage: interrogate [--validate] <questionnaire.yaml>
 
 Opens the questionnaire as a desktop form. On submit or save the answers are
 written back into the same file and printed to stdout as JSON.
+
+  --validate   Check the questionnaire and exit without opening a window, and
+               without writing to the file. A plain run already validates
+               before it presents anything, so this is for checking a
+               questionnaire you have just written.
 
 Exit codes:
   0  submitted   every visible required question was answered

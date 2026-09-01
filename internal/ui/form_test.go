@@ -395,11 +395,11 @@ questions:
   - {id: a, type: text, prompt: "A?", required: true}
   - {id: b, type: text, prompt: "B?", required: true}
 `)
-	if got := f.summary.Text; got != "2 required questions left" {
+	if got := f.summary.Text; got != "· 2 required questions left" {
 		t.Errorf("summary = %q", got)
 	}
 	find[*widget.Entry](t, f, "a").SetText("x")
-	if got := f.summary.Text; got != "1 required question left" {
+	if got := f.summary.Text; got != "· 1 required question left" {
 		t.Errorf("summary = %q", got)
 	}
 	find[*widget.Entry](t, f, "b").SetText("y")
@@ -512,14 +512,19 @@ func TestCommentBoxOnEveryQuestionType(t *testing.T) {
 	f, doc := build(t, uiDoc)
 	for _, q := range doc.Questions {
 		c := f.cards[q.ID]
-		found, ok := search[*widget.Entry](c.root, func(e *widget.Entry) bool {
-			return e.PlaceHolder == "Comment (optional)"
-		})
-		if !ok {
-			t.Errorf("question %q (%s) has no comment box", q.ID, q.Type)
+		if c.comment == nil {
+			t.Errorf("question %q (%s) has no comment field", q.ID, q.Type)
 			continue
 		}
-		found.SetText("a note on " + q.ID)
+		// Collapsed, but one action away for every type.
+		if c.comment.Expanded() {
+			t.Errorf("question %q starts with its comment field open", q.ID)
+		}
+		c.comment.Toggle()
+		if !c.comment.Expanded() {
+			t.Errorf("question %q did not open its comment field", q.ID)
+		}
+		c.comment.Entry().SetText("a note on " + q.ID)
 		if q.Comment != "a note on "+q.ID {
 			t.Errorf("comment for %q was not recorded, got %q", q.ID, q.Comment)
 		}
@@ -529,10 +534,8 @@ func TestCommentBoxOnEveryQuestionType(t *testing.T) {
 func TestCommentWithoutAnAnswerIsKept(t *testing.T) {
 	f, doc := build(t, uiDoc)
 	c := f.cards["name"]
-	box, _ := search[*widget.Entry](c.root, func(e *widget.Entry) bool {
-		return e.PlaceHolder == "Comment (optional)"
-	})
-	box.SetText("worth discussing")
+	c.comment.Toggle()
+	c.comment.Entry().SetText("worth discussing")
 
 	if doc.Question("name").HasAnswer() {
 		t.Error("the question should still be unanswered")

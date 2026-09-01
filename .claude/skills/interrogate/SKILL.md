@@ -111,6 +111,21 @@ You own the questions. `interrogate` owns only `answer`, `comment`, `status`,
 and `submitted_at` - it writes those and leaves every other byte of the file
 alone, so your comments and formatting survive being answered.
 
+## Checking a questionnaire before you run it
+
+```bash
+interrogate --validate <path>
+```
+
+Checks the file and exits without opening a window or writing anything: exit `0`
+if it is sound, `1` with the errors on stderr if it is not. Use it after writing
+a questionnaire, if you want to know it is well formed before putting it in
+front of anyone.
+
+It is not a prerequisite. A plain run validates first too, and refuses to open
+on a bad file with the same errors — so if you are about to run it anyway, just
+run it.
+
 ## Running it
 
 The user may take ten minutes over the form, which is longer than a foreground

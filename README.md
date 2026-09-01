@@ -29,6 +29,17 @@ interrogate openspec/changes/add-dark-mode/questionnaires/scope.yaml
 The form opens. On submit, the answers are written back into that same file and
 printed to stdout as JSON.
 
+To check a questionnaire without opening anything:
+
+```bash
+interrogate --validate openspec/changes/add-dark-mode/questionnaires/scope.yaml
+```
+
+A plain run already validates before it presents anything, so `--validate` is
+for checking a questionnaire you have just written — an agent verifying its own
+output — rather than for catching problems a normal run would miss. It writes
+nothing and needs no display.
+
 ## The questionnaire
 
 ```yaml
@@ -121,6 +132,9 @@ nothing and is never reported.
 | `rank`        | all of `options`, reordered               | drag, or use the arrows           |
 
 Every question also takes a **comment**, whatever its type, answered or not.
+The field rests collapsed behind a small affordance so a page of questions is
+not mostly empty boxes; once a comment exists, the affordance shows the start of
+it, and a question that arrives already carrying one opens showing it.
 
 ### Conditional questions
 
@@ -147,6 +161,10 @@ sidecar to keep in sync.
 
 Closing the window with unsaved answers asks first. Dismissing writes only the
 status — answers from an earlier session are left alone.
+
+The footer counts how far through you are. Questions hidden by `show_if` are in
+neither the answered nor the outstanding total, so the total moves as conditions
+resolve.
 
 ## Output
 

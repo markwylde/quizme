@@ -60,6 +60,7 @@ type form struct {
 	list     *fyne.Container
 	scroll   *container.Scroll
 	summary  *widget.Label
+	progress *widget.Label
 }
 
 // card is one question: its prompt, its control, its comment box, and the
@@ -69,6 +70,7 @@ type card struct {
 	root     *fyne.Container
 	warning  *widget.Label
 	rank     *rankWidget
+	comment  *commentField
 }
 
 func newForm(doc *questionnaire.Document, win fyne.Window) *form {
@@ -88,6 +90,11 @@ func newForm(doc *questionnaire.Document, win fyne.Window) *form {
 // questions, and a fixed footer holding the actions.
 func (f *form) build() fyne.CanvasObject {
 	f.list = container.NewVBox()
+
+	// The title and intro scroll away with the questions. They are context,
+	// read once before starting; pinning them would spend a fifth of the window
+	// on them for the rest of the session.
+	f.list.Add(f.header())
 	for _, q := range f.doc.Questions {
 		c := f.buildCard(q)
 		f.cards[q.ID] = c
@@ -96,12 +103,13 @@ func (f *form) build() fyne.CanvasObject {
 
 	f.scroll = container.NewVScroll(container.NewPadded(f.list))
 
-	// The footer holds the outstanding-questions summary, so it must exist
-	// before the first visibility pass has anything to report to.
-	header, footer := f.header(), f.footer()
+	// The footer holds the progress indicator and the actions, which are needed
+	// from anywhere in the page, so it stays pinned. It must also exist before
+	// the first visibility pass has anything to report to.
+	footer := f.footer()
 	f.syncVisibility()
 
-	return container.NewBorder(header, footer, nil, nil, f.scroll)
+	return container.NewBorder(nil, footer, nil, nil, f.scroll)
 }
 
 func (f *form) header() fyne.CanvasObject {
@@ -116,21 +124,27 @@ func (f *form) header() fyne.CanvasObject {
 		items = append(items, body)
 	}
 	items = append(items, widget.NewSeparator())
-	return container.NewPadded(container.NewVBox(items...))
+	return container.NewVBox(items...)
 }
 
 func (f *form) footer() fyne.CanvasObject {
+	// Progress and outstanding-required are different questions -- "how far
+	// through am I" and "what is stopping me submitting" -- so they get their
+	// own labels rather than one sentence trying to say both.
+	f.progress = widget.NewLabel("")
 	f.summary = widget.NewLabel("")
+	f.summary.Importance = widget.MediumImportance
 	f.summary.Wrapping = fyne.TextWrapWord
 
 	submit := widget.NewButton("Submit", f.submit)
 	submit.Importance = widget.HighImportance
 	dismiss := widget.NewButton("Dismiss", f.requestClose)
 
+	status := container.NewHBox(f.progress, f.summary)
 	actions := container.NewHBox(dismiss, submit)
 	return container.NewPadded(container.NewVBox(
 		widget.NewSeparator(),
-		container.NewBorder(nil, nil, f.summary, actions),
+		container.NewBorder(nil, nil, status, actions),
 	))
 }
 
@@ -162,13 +176,8 @@ func (f *form) buildCard(q *questionnaire.Question) *card {
 
 	parts = append(parts, f.control(q, c))
 
-	comment := widget.NewMultiLineEntry()
-	comment.SetPlaceHolder("Comment (optional)")
-	comment.SetMinRowsVisible(2)
-	comment.Wrapping = fyne.TextWrapWord
-	comment.SetText(q.Comment)
-	comment.OnChanged = func(s string) { q.Comment = s }
-	parts = append(parts, comment)
+	c.comment = newCommentField(q.Comment, func(s string) { q.Comment = s })
+	parts = append(parts, c.comment.root)
 
 	c.warning = widget.NewLabel("")
 	c.warning.Importance = widget.DangerImportance
@@ -404,18 +413,39 @@ func (f *form) syncVisibility() {
 }
 
 func (f *form) updateSummary() {
-	if f.summary == nil {
+	if f.summary == nil || f.progress == nil {
 		return
 	}
+
+	answered, total := f.counts()
+	f.progress.SetText(fmt.Sprintf("%d of %d answered", answered, total))
+
 	missing := len(f.doc.Unanswered())
 	switch missing {
 	case 0:
 		f.summary.SetText("")
 	case 1:
-		f.summary.SetText("1 required question left")
+		f.summary.SetText("· 1 required question left")
 	default:
-		f.summary.SetText(fmt.Sprintf("%d required questions left", missing))
+		f.summary.SetText(fmt.Sprintf("· %d required questions left", missing))
 	}
+}
+
+// counts reports how many of the applicable questions carry an answer.
+//
+// It reads over the same visibility pass that drives show_if, so a question the
+// responder cannot see is in neither figure. That means the total moves as
+// conditions resolve, which is the honest reading of a conditional
+// questionnaire: counting questions they will never reach would leave the form
+// permanently short of complete with nothing to act on.
+func (f *form) counts() (answered, total int) {
+	for _, q := range f.doc.VisibleQuestions() {
+		total++
+		if q.HasAnswer() {
+			answered++
+		}
+	}
+	return answered, total
 }
 
 // submit finishes the questionnaire, refusing while a visible required question

@@ -136,3 +136,19 @@ func TestSkillCoversTheThingsThatGoWrong(t *testing.T) {
 		}
 	}
 }
+
+func TestSkillDocumentsValidateHonestly(t *testing.T) {
+	doc := skillText(t)
+	if !strings.Contains(doc, "--validate") {
+		t.Error("the skill does not mention --validate")
+	}
+	// The obvious reading of the flag describes what a plain run already does,
+	// so the skill has to say what it is actually for, or an agent will run it
+	// before every invocation for no reason.
+	if !strings.Contains(doc, "not a prerequisite") {
+		t.Error("the skill does not say that --validate is optional before a run")
+	}
+	if !strings.Contains(doc, "validates first too") {
+		t.Error("the skill does not explain that a plain run validates as well")
+	}
+}
