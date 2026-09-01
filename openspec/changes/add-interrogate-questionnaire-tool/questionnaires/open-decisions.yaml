@@ -1,0 +1,102 @@
+# Open decisions from building interrogate. Answered with interrogate itself.
+title: Interrogate — open decisions
+intro: |
+  Everything's built and passing. These are the questions I deliberately
+  left open, plus two things the implementation turned up.
+
+  Answer what you have a view on; skip anything you'd rather I decided.
+
+status: submitted
+submitted_at: "2026-09-01T11:57:43+01:00"
+
+questions:
+  - id: validate_flag
+    type: select
+    prompt: Should interrogate get a --validate mode?
+    help: >-
+      Checks a questionnaire and exits, without opening a window. It'd let an
+      agent verify a file it just wrote. Right now a bad file just fails fast
+      when you run it, which is nearly as good. I'd say later, if it annoys us.
+    required: true
+    options:
+      - Add it now
+      - Leave it out
+      - Later, if it proves annoying
+    answer: Add it now
+
+  - id: validate_why
+    type: textarea
+    prompt: What would you want it for?
+    show_if:
+      validate_flag: Add it now
+    answer: If I understand this validates the questnniare before showing it to the user? seems useful
+
+  - id: skill_distribution
+    type: select
+    prompt: How should the skill reach your other repos?
+    help: >-
+      This repo has it at .claude/skills/interrogate/. Other repos need a copy.
+      A plugin is the tidiest but is the most setup; an `interrogate install`
+      subcommand keeps it in one tool.
+    required: true
+    options:
+      - A Claude Code plugin
+      - An `interrogate install` subcommand
+      - Just copy the file by hand
+      - Leave it, I'll decide later
+    answer: A Claude Code plugin
+
+  # This one came out of the build rather than the plan.
+  - id: merge_keys
+    type: select
+    prompt: Rejecting YAML merge keys (<<) — right call?
+    help: >-
+      An anchor would make it ambiguous where an answer belongs, so a
+      questionnaire using << is refused at load with a clear message rather
+      than half-supported. It means you can't share `type: text` across
+      questions via an anchor.
+    options:
+      - Right call, keep it strict
+      - I'd want anchors to work
+      - No strong view
+    answer: Right call, keep it strict
+
+  - id: look
+    type: scale
+    prompt: How does the form look?
+    help: 1 is send it back, 5 is ship it. See the screenshots in the README.
+    min: 1
+    max: 5
+    answer: 5
+
+  - id: polish
+    type: multiselect
+    prompt: Anything here worth doing before you use it in anger?
+    options:
+      - Keyboard shortcuts for submit and dismiss
+      - Remember window size and position between runs
+      - Markdown in prompts and help text
+      - Collapse the comment boxes until you want one
+      - A progress indicator at the top
+    answer:
+      - A progress indicator at the top
+      - Collapse the comment boxes until you want one
+    comment: Also remove the sticky heady, waste of space
+
+  - id: priorities
+    type: rank
+    prompt: If I only do one more pass, what should it be on?
+    options:
+      - Formatting fidelity
+      - Visual polish
+      - Agent ergonomics
+      - Test coverage
+    answer:
+      - Visual polish
+      - Formatting fidelity
+      - Agent ergonomics
+      - Test coverage
+
+  - id: anything_else
+    type: textarea
+    prompt: Anything else?
