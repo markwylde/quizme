@@ -34,18 +34,18 @@
 
 ## 5. Form UI
 
-- [ ] 5.1 Build the single scrolling page shell with title, intro, and pinned Submit / Dismiss controls, and verify the controls stay reachable with a questionnaire taller than the window
-- [ ] 5.2 Implement controls for `select`, `multiselect`, `text`, `textarea`, `boolean`, and `number` including bound enforcement, and verify each round-trips a value into the answer model
-- [ ] 5.3 Build the custom `scale` widget and verify it emits an integer within the declared range
-- [ ] 5.4 Build the custom `rank` widget with drag-to-reorder and verify its answer is always a complete permutation of the options
-- [ ] 5.5 Add the comment field to every question regardless of type and verify a comment can be entered on an otherwise unanswered question
-- [ ] 5.6 Implement live `show_if` re-evaluation rebuilding the visible question list on any answer change, and verify questions appear and disappear in document order without disturbing scroll position unreasonably
-- [ ] 5.7 Implement submit-time required validation that refuses submission and identifies the offending question, and verify a blank required question blocks submission while a hidden one does not
-- [ ] 5.8 Implement the close-with-unsaved-changes prompt offering Save or Discard, and verify closing with no changes made skips the prompt and dismisses
+- [x] 5.1 Build the single scrolling page shell with title, intro, and pinned Submit / Dismiss controls, and verify the controls stay reachable with a questionnaire taller than the window
+- [x] 5.2 Implement controls for `select`, `multiselect`, `text`, `textarea`, `boolean`, and `number` including bound enforcement, and verify each round-trips a value into the answer model
+- [x] 5.3 Build the custom `scale` widget and verify it emits an integer within the declared range
+- [x] 5.4 Build the custom `rank` widget with drag-to-reorder and verify its answer is always a complete permutation of the options
+- [x] 5.5 Add the comment field to every question regardless of type and verify a comment can be entered on an otherwise unanswered question
+- [x] 5.6 Implement live `show_if` re-evaluation rebuilding the visible question list on any answer change, and verify questions appear and disappear in document order without disturbing scroll position unreasonably
+- [x] 5.7 Implement submit-time required validation that refuses submission and identifies the offending question, and verify a blank required question blocks submission while a hidden one does not
+- [x] 5.8 Implement the close-with-unsaved-changes prompt offering Save or Discard, and verify closing with no changes made skips the prompt and dismisses
 
 ## 6. Presentation pass
 
-- [ ] 6.1 Implement a custom `fyne.Theme` covering colors, sizes, and padding, and verify it applies across every control type in a demo questionnaire
+- [x] 6.1 Implement a custom `fyne.Theme` covering colors, sizes, and padding, and verify it applies across every control type in a demo questionnaire
 - [ ] 6.2 Bundle a font and verify it renders on macOS, Linux, and Windows builds
 - [ ] 6.3 Review spacing, grouping, and typography against a realistic twenty-question questionnaire and verify by screenshot review with the user
 
