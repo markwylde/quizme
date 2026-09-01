@@ -26,11 +26,11 @@
 
 ## 4. CLI shell
 
-- [ ] 4.1 Implement argument parsing for a single questionnaire path plus usage text, and verify missing and excess arguments both produce a usage error
-- [ ] 4.2 Wire load-and-validate to run before any window opens and verify a malformed questionnaire writes errors to stderr and opens nothing
-- [ ] 4.3 Implement the four exit codes (0 submitted, 1 error, 2 dismissed, 3 saved) and verify each outcome returns the right code from a scripted run
-- [ ] 4.4 Implement the JSON answers document on stdout, keyed by question id with answer and comment, and verify its shape against a schema test and that diagnostics go to stderr only
-- [ ] 4.5 Implement fail-fast detection of a missing display and verify the command errors promptly rather than hanging when no display is available
+- [x] 4.1 Implement argument parsing for a single questionnaire path plus usage text, and verify missing and excess arguments both produce a usage error
+- [x] 4.2 Wire load-and-validate to run before any window opens and verify a malformed questionnaire writes errors to stderr and opens nothing
+- [x] 4.3 Implement the four exit codes (0 submitted, 1 error, 2 dismissed, 3 saved) and verify each outcome returns the right code from a scripted run
+- [x] 4.4 Implement the JSON answers document on stdout, keyed by question id with answer and comment, and verify its shape against a schema test and that diagnostics go to stderr only
+- [x] 4.5 Implement fail-fast detection of a missing display and verify the command errors promptly rather than hanging when no display is available
 
 ## 5. Form UI
 

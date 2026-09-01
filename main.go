@@ -1,3 +1,128 @@
+// Command interrogate presents a YAML questionnaire as a desktop form and
+// writes the answers back into the file it came from.
+//
+// Usage:
+//
+//	interrogate path/to/questionnaire.yaml
+//
+// The exit code reports the outcome, so a caller can branch on it without
+// parsing anything:
+//
+//	0  submitted   every visible required question was answered
+//	1  error       the questionnaire could not be read, shown, or written
+//	2  dismissed   the responder discarded their answers
+//	3  saved       answers were kept with required questions outstanding
 package main
 
-func main() {}
+import (
+	"errors"
+	"flag"
+	"fmt"
+	"io"
+	"os"
+	"time"
+
+	"github.com/markwylde/interrogate/internal/questionnaire"
+	"github.com/markwylde/interrogate/internal/ui"
+)
+
+// Exit codes. Each responder outcome is distinct from the others and from a
+// failure, which is the point: branching should not require reading stdout.
+const (
+	exitSubmitted = 0
+	exitError     = 1
+	exitDismissed = 2
+	exitSaved     = 3
+)
+
+// presenter shows a questionnaire and reports how the responder left it. It is
+// a parameter so the command can be tested without a display.
+type presenter func(*questionnaire.Document) (questionnaire.Status, error)
+
+func main() {
+	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr, present))
+}
+
+// present is the real form: check for a desktop session, then open the window.
+func present(doc *questionnaire.Document) (questionnaire.Status, error) {
+	if err := ui.CheckDisplay(); err != nil {
+		return "", err
+	}
+	return ui.Run(doc)
+}
+
+func run(args []string, stdout, stderr io.Writer, show presenter) int {
+	path, err := parseArgs(args, stderr)
+	if err != nil {
+		return exitError
+	}
+
+	doc, err := questionnaire.Load(path)
+	if err != nil {
+		fmt.Fprintf(stderr, "interrogate: %s could not be read as a questionnaire:\n%v\n", path, err)
+		return exitError
+	}
+
+	status, err := show(doc)
+	if err != nil {
+		fmt.Fprintf(stderr, "interrogate: %v\n", err)
+		return exitError
+	}
+	if !status.Valid() || status == questionnaire.StatusPending {
+		fmt.Fprintf(stderr, "interrogate: the form returned an unusable outcome %q\n", status)
+		return exitError
+	}
+
+	if err := doc.Save(status, time.Now()); err != nil {
+		fmt.Fprintf(stderr, "interrogate: %v\n", err)
+		return exitError
+	}
+
+	// The answers go to stdout only once they are safely on disk, so a caller
+	// that trusts stdout is never ahead of the file.
+	if err := doc.Result(status).WriteJSON(stdout); err != nil {
+		fmt.Fprintf(stderr, "interrogate: could not write the answers to stdout: %v\n", err)
+		return exitError
+	}
+
+	switch status {
+	case questionnaire.StatusSubmitted:
+		return exitSubmitted
+	case questionnaire.StatusSaved:
+		return exitSaved
+	default:
+		return exitDismissed
+	}
+}
+
+func parseArgs(args []string, stderr io.Writer) (string, error) {
+	fs := flag.NewFlagSet("interrogate", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	fs.Usage = func() { fmt.Fprint(stderr, usage) }
+
+	if err := fs.Parse(args); err != nil {
+		return "", err
+	}
+	switch fs.NArg() {
+	case 1:
+		return fs.Arg(0), nil
+	case 0:
+		fmt.Fprint(stderr, "interrogate: no questionnaire given\n\n"+usage)
+		return "", errors.New("no questionnaire given")
+	default:
+		fmt.Fprintf(stderr, "interrogate: expected one questionnaire, got %d\n\n%s", fs.NArg(), usage)
+		return "", errors.New("too many arguments")
+	}
+}
+
+const usage = `usage: interrogate <questionnaire.yaml>
+
+Opens the questionnaire as a desktop form. On submit or save the answers are
+written back into the same file and printed to stdout as JSON.
+
+Exit codes:
+  0  submitted   every visible required question was answered
+  1  error       the questionnaire could not be read, shown, or written
+  2  dismissed   the responder discarded their answers
+  3  saved       answers were kept with required questions outstanding
+`
