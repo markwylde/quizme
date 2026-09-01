@@ -4,8 +4,8 @@ intro: |
   A few things left to settle. Answer what you have a view on;
   anything you skip, I'll come back to.
 
-status: pending
-submitted_at: null
+status: submitted
+submitted_at: "2026-09-01T13:10:01+01:00"
 
 questions:
   - id: validate_flag
@@ -17,6 +17,7 @@ questions:
       - Yes, add it
       - No, keep the surface small
       - Later, if it proves annoying
+    answer: Later, if it proves annoying
 
   - id: validate_why
     type: textarea
@@ -33,6 +34,7 @@ questions:
       - Copy into .claude/skills
       - An install subcommand
       - Undecided
+    answer: Copy into .claude/skills
 
   - id: autosave
     type: boolean
@@ -52,6 +54,7 @@ questions:
     help: 1 is far too small, 5 is far too large, 3 is about right.
     min: 1
     max: 5
+    answer: 4
 
   - id: polish
     type: multiselect
@@ -62,6 +65,10 @@ questions:
       - Markdown in prompts and help text
       - A progress indicator at the top
       - Syntax-highlighted preview of the file
+    answer:
+      - Remember window size between runs
+      - Keyboard shortcuts for submit and dismiss
+      - Markdown in prompts and help text
 
   - id: priorities
     type: rank

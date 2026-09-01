@@ -1,0 +1,38 @@
+title: Packaging decisions
+intro: |
+  A couple of things to settle before I start on the plugin layout.
+
+status: submitted
+submitted_at: "2026-09-01T13:11:12+01:00"
+
+questions:
+  - id: authoritative_copy
+    type: select
+    prompt: Which copy of SKILL.md is the authoritative one?
+    help: >
+      I'd lean towards skills/interrogate/SKILL.md — that's the plugin payload,
+      the thing other repos actually install. The .claude/ copy is then just
+      dogfooding.
+    required: true
+    options:
+      - skills/interrogate/SKILL.md (plugin payload)
+      - .claude/skills/interrogate/SKILL.md (current location)
+    answer: skills/interrogate/SKILL.md (plugin payload)
+
+  - id: sync_mechanism
+    type: select
+    prompt: How should the second copy stay in sync?
+    help: >
+      A symlink can never drift, so tasks 2.1–2.4 mostly evaporate. A generated
+      copy is more portable but needs a make target and a test to police it.
+    required: true
+    options:
+      - Symlink (cannot drift, no generator needed)
+      - Generated copy plus a test that fails on drift
+      - Just a test, no generator — fix it by hand
+    answer: Generated copy plus a test that fails on drift
+
+  - id: start_version
+    type: text
+    prompt: What version should plugin.json start at?
+    help: I'd say 0.1.0 — it's not been installed anywhere yet.

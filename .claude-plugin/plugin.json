@@ -1,0 +1,9 @@
+{
+  "name": "interrogate",
+  "description": "Ask a batch of decisions as a desktop form instead of one question at a time in chat. Pairs with the interrogate CLI.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Mark Wylde"
+  },
+  "homepage": "https://github.com/markwylde/interrogate"
+}

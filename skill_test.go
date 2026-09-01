@@ -16,7 +16,7 @@ import (
 
 func skillText(t *testing.T) string {
 	t.Helper()
-	raw, err := os.ReadFile(filepath.Join(".claude", "skills", "interrogate", "SKILL.md"))
+	raw, err := os.ReadFile(filepath.Join("skills", "interrogate", "SKILL.md"))
 	if err != nil {
 		t.Fatalf("the skill is missing: %v", err)
 	}
