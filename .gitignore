@@ -1,0 +1,11 @@
+# Build output
+/interrogate
+/dist/
+/bin/
+
+# Go
+*.test
+*.out
+
+# macOS
+.DS_Store
