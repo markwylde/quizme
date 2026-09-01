@@ -6,7 +6,7 @@ license: MIT
 compatibility: Requires the interrogate CLI on PATH (go install github.com/markwylde/interrogate@latest).
 metadata:
   author: markwylde
-  version: "1.0.1"
+  version: "1.0.2"
 ---
 
 # Interrogate
@@ -185,6 +185,7 @@ go install github.com/markwylde/interrogate@latest
 ```
 
 If it is not on `PATH`, say so, give that line, and **ask your questions in
-conversation instead** - do not stall waiting for an install. It also needs a
+conversation instead** - do not stall waiting for an install. The skill installs
+independently of the binary, so a repository can have one without the other. It also needs a
 desktop session; over a bare SSH connection it exits immediately with an
 explanation rather than hanging, and the same fallback applies.
