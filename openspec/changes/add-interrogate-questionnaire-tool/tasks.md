@@ -46,8 +46,8 @@
 ## 6. Presentation pass
 
 - [x] 6.1 Implement a custom `fyne.Theme` covering colors, sizes, and padding, and verify it applies across every control type in a demo questionnaire
-- [ ] 6.2 Bundle a font and verify it renders on macOS, Linux, and Windows builds
-- [ ] 6.3 Review spacing, grouping, and typography against a realistic twenty-question questionnaire and verify by screenshot review with the user
+- [x] 6.2 Bundle a font and verify it renders on macOS, Linux, and Windows builds
+- [x] 6.3 Review spacing, grouping, and typography against a realistic twenty-question questionnaire and verify by screenshot review with the user
 
 ## 7. Skill
 
@@ -60,6 +60,6 @@
 ## 8. Delivery
 
 - [ ] 8.1 Verify `go install` puts `interrogate` on the path and the binary runs a questionnaire from an arbitrary working directory
-- [ ] 8.2 Verify cross-platform builds compile for macOS, Linux, and Windows
+- [x] 8.2 Verify cross-platform builds compile for macOS, Linux, and Windows
 - [ ] 8.3 Write the README covering install, the questionnaire format with a worked example, and the exit codes, and verify a reader can author and run a questionnaire from it alone
 - [ ] 8.4 Run one real end-to-end interrogation driven by an opsx agent on an actual change and verify the answers land in the file with formatting preserved

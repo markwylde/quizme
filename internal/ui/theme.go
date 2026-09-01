@@ -29,6 +29,7 @@ type palette struct {
 	separator   color.Color
 	inputBorder color.Color
 	disabled    color.Color
+	disabledBg  color.Color
 	hover       color.Color
 	pressed     color.Color
 	selection   color.Color
@@ -51,6 +52,7 @@ var lightPalette = palette{
 	separator:   hex(0xE6E2DA),
 	inputBorder: hex(0xD8D3C9),
 	disabled:    hex(0xB5B0A6),
+	disabledBg:  hex(0xF1EFEA),
 	hover:       rgba(0x1C, 0x1B, 0x19, 0x0E),
 	pressed:     rgba(0x1C, 0x1B, 0x19, 0x1A),
 	selection:   rgba(0x3B, 0x5B, 0xDB, 0x33),
@@ -73,6 +75,7 @@ var darkPalette = palette{
 	separator:   hex(0x2C2F34),
 	inputBorder: hex(0x3A3E44),
 	disabled:    hex(0x5C6068),
+	disabledBg:  hex(0x232529),
 	hover:       rgba(0xFF, 0xFF, 0xFF, 0x12),
 	pressed:     rgba(0xFF, 0xFF, 0xFF, 0x1F),
 	selection:   rgba(0x7C, 0x93, 0xFF, 0x40),
@@ -110,8 +113,13 @@ func (t formTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) co
 		return p.separator
 	case theme.ColorNameInputBorder:
 		return p.inputBorder
-	case theme.ColorNameDisabled, theme.ColorNameDisabledButton:
+	case theme.ColorNameDisabled:
+		// Disabled text and icons.
 		return p.disabled
+	case theme.ColorNameDisabledButton:
+		// The button's fill, not its label: sharing one value with the above
+		// paints a solid block where a faded icon should be.
+		return p.disabledBg
 	case theme.ColorNameHover:
 		return p.hover
 	case theme.ColorNamePressed:
@@ -143,7 +151,7 @@ func (t formTheme) Size(name fyne.ThemeSizeName) float32 {
 	case theme.SizeNamePadding:
 		return 6
 	case theme.SizeNameInnerPadding:
-		return 10
+		return 8
 	case theme.SizeNameText:
 		return 14
 	case theme.SizeNameHeadingText:
@@ -153,7 +161,7 @@ func (t formTheme) Size(name fyne.ThemeSizeName) float32 {
 	case theme.SizeNameCaptionText:
 		return 12
 	case theme.SizeNameLineSpacing:
-		return 5
+		return 4
 	case theme.SizeNameSeparatorThickness:
 		return 1
 	case theme.SizeNameInputRadius:

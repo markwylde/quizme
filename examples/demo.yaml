@@ -1,0 +1,81 @@
+# A worked example: the questions still open on interrogate itself.
+title: Interrogate — open decisions
+intro: |
+  A few things left to settle. Answer what you have a view on;
+  anything you skip, I'll come back to.
+
+status: pending
+submitted_at: null
+
+questions:
+  - id: validate_flag
+    type: select
+    prompt: Should `interrogate` get a --validate mode?
+    help: Checks a questionnaire without opening a window. Useful when authoring.
+    required: true
+    options:
+      - Yes, add it
+      - No, keep the surface small
+      - Later, if it proves annoying
+
+  - id: validate_why
+    type: textarea
+    prompt: What would you use it for?
+    show_if:
+      validate_flag: Yes, add it
+
+  - id: skill_distribution
+    type: select
+    prompt: How should the skill reach other repos?
+    required: true
+    options:
+      - A Claude Code plugin
+      - Copy into .claude/skills
+      - An install subcommand
+      - Undecided
+
+  - id: autosave
+    type: boolean
+    prompt: Should the form autosave as you type?
+
+  - id: autosave_interval
+    type: number
+    prompt: How many seconds between autosaves?
+    min: 5
+    max: 300
+    show_if:
+      autosave: true
+
+  - id: window_size
+    type: scale
+    prompt: Is the default window a good size?
+    help: 1 is far too small, 5 is far too large, 3 is about right.
+    min: 1
+    max: 5
+
+  - id: polish
+    type: multiselect
+    prompt: Which of these are worth doing before you use it in anger?
+    options:
+      - Keyboard shortcuts for submit and dismiss
+      - Remember window size between runs
+      - Markdown in prompts and help text
+      - A progress indicator at the top
+      - Syntax-highlighted preview of the file
+
+  - id: priorities
+    type: rank
+    prompt: Rank what matters most for the next pass.
+    options:
+      - Formatting fidelity
+      - Visual polish
+      - Agent ergonomics
+      - Startup speed
+
+  - id: binary_name
+    type: text
+    prompt: Is `interrogate` the right command name?
+
+  - id: anything_else
+    type: textarea
+    prompt: Anything else on your mind?

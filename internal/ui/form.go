@@ -143,12 +143,16 @@ func (f *form) buildCard(q *questionnaire.Question) *card {
 	prompt.TextStyle = fyne.TextStyle{Bold: true}
 	prompt.Wrapping = fyne.TextWrapWord
 
-	parts := []fyne.CanvasObject{prompt}
+	// The required marker sits on the prompt's own line. On its own row it read
+	// as another instruction to take in; beside the prompt it is just a label.
+	var heading fyne.CanvasObject = prompt
 	if q.Required {
-		note := widget.NewLabel("Required")
-		note.SizeName = theme.SizeNameCaptionText
-		parts = append(parts, note)
+		marker := captionLabel("Required")
+		marker.Importance = widget.MediumImportance
+		heading = container.NewBorder(nil, nil, nil, marker, prompt)
 	}
+
+	parts := []fyne.CanvasObject{heading}
 	if help := strings.TrimSpace(q.Help); help != "" {
 		body := widget.NewLabel(help)
 		body.Wrapping = fyne.TextWrapWord
@@ -171,7 +175,7 @@ func (f *form) buildCard(q *questionnaire.Question) *card {
 	c.warning.Hide()
 	parts = append(parts, c.warning)
 
-	c.root = container.NewVBox(container.NewPadded(container.NewVBox(parts...)), widget.NewSeparator())
+	c.root = container.NewVBox(container.NewVBox(parts...), widget.NewSeparator())
 	return c
 }
 
@@ -308,20 +312,15 @@ func (f *form) scaleControl(q *questionnaire.Question) fyne.CanvasObject {
 		current = &v
 	}
 
-	scale := newScaleWidget(lo, hi, current, func(v *int) {
+	// The buttons carry their own numbers, so no separate range labels: they
+	// only pushed the two ends of the scale apart with empty space.
+	return newScaleWidget(lo, hi, current, func(v *int) {
 		if v == nil {
 			f.set(q, nil)
 			return
 		}
 		f.set(q, *v)
 	})
-
-	labels := container.NewBorder(nil, nil,
-		captionLabel(strconv.Itoa(lo)),
-		captionLabel(strconv.Itoa(hi)),
-		nil,
-	)
-	return container.NewVBox(scale, labels)
 }
 
 func (f *form) rankControl(q *questionnaire.Question, c *card) fyne.CanvasObject {
