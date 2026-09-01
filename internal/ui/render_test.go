@@ -72,6 +72,15 @@ func (t *fixedVariantTheme) Color(name fyne.ThemeColorName, _ fyne.ThemeVariant)
 	return t.Theme.Color(name, t.variant)
 }
 
+// QuestionTint pins the variant for the bands too, so a preview renders the
+// tints of the variant it is showing rather than the app's current one.
+func (t *fixedVariantTheme) QuestionTint(index int, _ fyne.ThemeVariant) color.Color {
+	if provider, ok := t.Theme.(tintProvider); ok {
+		return provider.QuestionTint(index, t.variant)
+	}
+	return color.Transparent
+}
+
 // controlsDoc shows one question of every type, for reviewing the controls
 // themselves rather than the page.
 const controlsDoc = `

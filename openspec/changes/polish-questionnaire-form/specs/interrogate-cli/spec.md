@@ -91,3 +91,23 @@ The form SHALL show how far through the questionnaire the responder is, so progr
 #### Scenario: Progress when a conditional question appears
 - **WHEN** answering a question reveals a further question
 - **THEN** the total grows to include it, and the indicator updates accordingly
+
+### Requirement: Questions are visually separated
+
+Each question SHALL be presented on its own background band, tinted so that no two adjacent questions share a tint. The tints SHALL be subtle enough not to compete with the question's own content, and SHALL suit the light and dark presentations equally.
+
+#### Scenario: Adjacent questions differ
+- **WHEN** a questionnaire of any length is presented
+- **THEN** no question shares a background tint with the question above or below it
+
+#### Scenario: Tints follow the presentation
+- **WHEN** the form is presented in its dark variant
+- **THEN** the tints are drawn from a set suited to a dark background rather than lightened versions of the light ones
+
+#### Scenario: A hidden question does not consume a tint
+- **WHEN** a question is hidden because its condition does not hold
+- **THEN** the questions on either side of it are still tinted differently from each other
+
+#### Scenario: Tint does not obscure content
+- **WHEN** a question is presented on a tinted band
+- **THEN** its prompt, controls, and help text remain legible against it

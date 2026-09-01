@@ -1,0 +1,74 @@
+# Reviewing the polish pass, with the polished form.
+title: Polish pass — does this land?
+intro: |
+  Same questionnaire shape as last time, but with the header scrolling,
+  comments collapsed, and a progress count in the footer.
+
+  Note the comment boxes: press the pencil on any question to open one.
+
+status: pending
+submitted_at: null
+
+questions:
+  - id: density
+    type: scale
+    prompt: Is the page a good density now?
+    help: >-
+      Last time you saw about two questions per screen. It's four and a half
+      now. 1 is still too cramped-or-loose, 5 is right.
+    min: 1
+    max: 5
+    required: true
+
+  - id: comment_affordance
+    type: select
+    prompt: Does the collapsed comment control work for you?
+    help: >-
+      A pencil and "Add comment", which becomes a preview of the text once
+      you've written one. The worry is that a hidden box is a box nobody uses.
+    required: true
+    options:
+      - Yes, this is right
+      - I'd rather they were open by default again
+      - Right idea, wrong control
+
+  - id: affordance_fix
+    type: text
+    prompt: What would you change about it?
+    show_if:
+      comment_affordance: Right idea, wrong control
+
+  - id: progress
+    type: select
+    prompt: Is "4 of 7 answered" the right progress readout?
+    options:
+      - Yes
+      - I'd prefer a bar
+      - I'd prefer a percentage
+      - Drop it, the scrollbar is enough
+
+  - id: header
+    type: boolean
+    prompt: Was scrolling the header away the right call?
+
+  - id: next
+    type: select
+    prompt: What next?
+    help: >-
+      distribute-interrogate-skill is planned and ready. Archiving this change
+      first is the tidy path.
+    required: true
+    options:
+      - Archive this, then do the plugin
+      - Archive this and stop for now
+      - More polish first
+
+  - id: more_polish
+    type: textarea
+    prompt: What else needs doing?
+    show_if:
+      next: More polish first
+
+  - id: anything_else
+    type: textarea
+    prompt: Anything else?

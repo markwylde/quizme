@@ -60,6 +60,13 @@ func search[T fyne.CanvasObject](obj fyne.CanvasObject, match func(T) bool) (T, 
 			}
 		}
 	}
+	// A widget's children hang off its renderer, so anything wrapping content
+	// in a widget has to say what it wraps.
+	if holder, ok := obj.(interface{ Content() fyne.CanvasObject }); ok {
+		if found, ok := search[T](holder.Content(), match); ok {
+			return found, true
+		}
+	}
 	switch p := obj.(type) {
 	case *fyne.Container:
 		for _, child := range p.Objects {

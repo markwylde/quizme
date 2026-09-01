@@ -71,6 +71,7 @@ type card struct {
 	warning  *widget.Label
 	rank     *rankWidget
 	comment  *commentField
+	band     *band
 }
 
 func newForm(doc *questionnaire.Document, win fyne.Window) *form {
@@ -184,7 +185,10 @@ func (f *form) buildCard(q *questionnaire.Question) *card {
 	c.warning.Hide()
 	parts = append(parts, c.warning)
 
-	c.root = container.NewVBox(container.NewVBox(parts...), widget.NewSeparator())
+	// The tint does the separating a hairline rule was failing to do, so the
+	// separator goes: a band edge and a rule together only look fussy.
+	c.band = newBand(0, container.NewVBox(parts...))
+	c.root = container.NewVBox(c.band)
 	return c
 }
 
@@ -406,10 +410,28 @@ func (f *form) syncVisibility() {
 			c.warning.Hide()
 		}
 	}
+	f.assignTints()
 	if changed && f.list != nil {
 		f.list.Refresh()
 	}
 	f.updateSummary()
+}
+
+// assignTints numbers the bands over the questions actually on screen.
+//
+// Counting hidden questions would let a gated question in the middle leave its
+// two neighbours sharing a tint, which is the one thing the tints exist to
+// prevent.
+func (f *form) assignTints() {
+	next := 0
+	for _, q := range f.doc.Questions {
+		c, ok := f.cards[q.ID]
+		if !ok || c.band == nil || !c.root.Visible() {
+			continue
+		}
+		c.band.SetTint(next)
+		next++
+	}
 }
 
 func (f *form) updateSummary() {

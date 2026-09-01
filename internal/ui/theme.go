@@ -40,6 +40,12 @@ type palette struct {
 	shadow      color.Color
 	overlay     color.Color
 	scrollBar   color.Color
+
+	// questionTints cycle behind consecutive questions. A hairline rule was not
+	// enough to tell one question from the next while scrolling; a band of
+	// colour is. They are deliberately within a few points of the background --
+	// enough to read as a change, not enough to compete with the content.
+	questionTints []color.Color
 }
 
 var lightPalette = palette{
@@ -63,6 +69,14 @@ var lightPalette = palette{
 	shadow:      rgba(0x00, 0x00, 0x00, 0x22),
 	overlay:     hex(0xFFFFFF),
 	scrollBar:   rgba(0x1C, 0x1B, 0x19, 0x40),
+	questionTints: []color.Color{
+		hex(0xF4F6FC), // blue
+		hex(0xF1F8F2), // green
+		hex(0xFCF7ED), // amber
+		hex(0xFCF3F4), // rose
+		hex(0xF7F4FC), // violet
+		hex(0xEFF8F8), // teal
+	},
 }
 
 var darkPalette = palette{
@@ -86,6 +100,14 @@ var darkPalette = palette{
 	shadow:      rgba(0x00, 0x00, 0x00, 0x66),
 	overlay:     hex(0x1F2124),
 	scrollBar:   rgba(0xFF, 0xFF, 0xFF, 0x40),
+	questionTints: []color.Color{
+		hex(0x191C24), // blue
+		hex(0x171D19), // green
+		hex(0x201C15), // amber
+		hex(0x201819), // rose
+		hex(0x1B1823), // violet
+		hex(0x141D1E), // teal
+	},
 }
 
 func (t formTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
@@ -184,4 +206,33 @@ func hex(v uint32) color.Color {
 
 func rgba(r, g, b, a uint8) color.Color {
 	return color.NRGBA{R: r, G: g, B: b, A: a}
+}
+
+// tintCount is how many tints a palette cycles through. Both palettes define
+// the same number, which the tests assert.
+const tintCount = 6
+
+// tintProvider is a theme that can colour the band behind a question.
+//
+// The tints are looked up through this rather than as theme colour names,
+// because a name the running theme has never heard of is a logged error on
+// every draw. A theme that does not provide tints simply gets none.
+type tintProvider interface {
+	QuestionTint(index int, variant fyne.ThemeVariant) color.Color
+}
+
+// QuestionTint returns the background for the nth question on screen, cycling
+// so that no two adjacent questions share one.
+func (t formTheme) QuestionTint(index int, variant fyne.ThemeVariant) color.Color {
+	p := lightPalette
+	if variant == theme.VariantDark {
+		p = darkPalette
+	}
+	if len(p.questionTints) == 0 {
+		return color.Transparent
+	}
+	if index < 0 {
+		index = 0
+	}
+	return p.questionTints[index%len(p.questionTints)]
 }

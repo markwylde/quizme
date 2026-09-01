@@ -25,9 +25,16 @@
 - [x] 4.3 Verify hidden questions are counted in neither the answered nor the outstanding total
 - [x] 4.4 Verify the total grows when answering a question reveals a further one
 
-## 5. Delivery
+## 5. Question tints
 
-- [ ] 5.1 Refresh the rendered previews and verify the density improvement by screenshot review with the user
-- [x] 5.2 Update the README's form screenshot and document `--validate`, and verify the README's examples still pass their own tests
-- [x] 5.3 Note in the skill that a questionnaire can be checked with `--validate`, and verify the skill's tests still pass
-- [ ] 5.4 Run the full suite and one real interrogation, and verify formatting preservation still holds end to end
+- [x] 5.1 Add a cycle of question tints to each palette in the theme, and verify every tint is within a few points of its palette's background so none competes with the content
+- [x] 5.2 Wrap each card in a band that paints its tint, and verify by rendered preview that adjacent questions differ in both light and dark
+- [x] 5.3 Assign tints over the visible questions so a hidden one does not leave two neighbours sharing a tint, and verify against a questionnaire with a gated question in the middle
+- [x] 5.4 Have the band re-read its tint on refresh rather than capturing it once, and verify the tints follow a change of theme variant
+
+## 6. Delivery
+
+- [x] 6.1 Refresh the rendered previews and verify the density improvement by screenshot review with the user
+- [x] 6.2 Update the README's form screenshot and document `--validate`, and verify the README's examples still pass their own tests
+- [x] 6.3 Note in the skill that a questionnaire can be checked with `--validate`, and verify the skill's tests still pass
+- [ ] 6.4 Run the full suite and one real interrogation, and verify formatting preservation still holds end to end
