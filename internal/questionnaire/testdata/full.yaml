@@ -1,0 +1,57 @@
+# A questionnaire exercising every field type.
+title: Storage decisions
+intro: |
+  A few things to settle before we build.
+
+status: pending
+submitted_at: null
+
+questions:
+  # Where the answers end up matters most.
+  - id: storage
+    type: select
+    prompt: Where do answers live?
+    required: true
+    options:
+      - in-place
+      - sidecar
+      - both
+
+  - id: storage_why
+    type: textarea
+    prompt: What made that the right call?
+    show_if:
+      storage: sidecar
+
+  - id: formats
+    type: multiselect
+    prompt: Which formats should we accept?
+    options: [yaml, json, toml]
+
+  - id: name
+    type: text
+    prompt: What should we call it?
+
+  - id: budget
+    type: number
+    prompt: How many days can we spend?
+    min: 1
+    max: 30
+
+  - id: ship_it
+    type: boolean
+    prompt: Ship before review?
+
+  - id: urgency
+    type: scale
+    prompt: How urgent is this?
+    min: 1
+    max: 5
+
+  - id: priorities            # ordering matters here
+    type: rank
+    prompt: Rank these by importance.
+    options:
+      - correctness
+      - speed
+      - looks

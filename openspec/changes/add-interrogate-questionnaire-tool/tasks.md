@@ -1,17 +1,17 @@
 ## 1. Project setup
 
-- [ ] 1.1 Initialise the Go module at the repo root and verify `go build ./...` succeeds on an empty `main`
-- [ ] 1.2 Add the `yaml.v3` and Fyne dependencies and verify `go mod tidy` leaves a clean tree and `go build ./...` still succeeds
-- [ ] 1.3 Add a `Makefile` or equivalent with `build`, `test`, and `run` targets and verify each runs from a clean checkout
+- [x] 1.1 Initialise the Go module at the repo root and verify `go build ./...` succeeds on an empty `main`
+- [x] 1.2 Add the `yaml.v3` and Fyne dependencies and verify `go mod tidy` leaves a clean tree and `go build ./...` still succeeds
+- [x] 1.3 Add a `Makefile` or equivalent with `build`, `test`, and `run` targets and verify each runs from a clean checkout
 
 ## 2. Questionnaire format
 
-- [ ] 2.1 Define the questionnaire, question, and answer types covering all eight field types plus `comment`, `show_if`, and `required`, and verify a hand-written example fixture unmarshals into them
-- [ ] 2.2 Implement loading and validation — missing `questions`, duplicate ids, missing prompts, unknown types, choice types with fewer than two options — and verify each rejection has a table-driven test naming the offending question
-- [ ] 2.3 Implement `show_if` reference and cycle checking and verify dangling references and circular chains are both rejected with the ids named
-- [ ] 2.4 Implement per-type answer validation, including `number` bounds, `scale` range, and `rank` permutation completeness, and verify with a table-driven test per type
-- [ ] 2.5 Implement visibility evaluation (which questions are visible given a set of answers) and verify chained and multi-condition cases resolve correctly
-- [ ] 2.6 Implement required-question checking against visible questions only and verify a hidden required question does not block completion
+- [x] 2.1 Define the questionnaire, question, and answer types covering all eight field types plus `comment`, `show_if`, and `required`, and verify a hand-written example fixture unmarshals into them
+- [x] 2.2 Implement loading and validation — missing `questions`, duplicate ids, missing prompts, unknown types, choice types with fewer than two options — and verify each rejection has a table-driven test naming the offending question
+- [x] 2.3 Implement `show_if` reference and cycle checking and verify dangling references and circular chains are both rejected with the ids named
+- [x] 2.4 Implement per-type answer validation, including `number` bounds, `scale` range, and `rank` permutation completeness, and verify with a table-driven test per type
+- [x] 2.5 Implement visibility evaluation (which questions are visible given a set of answers) and verify chained and multi-condition cases resolve correctly
+- [x] 2.6 Implement required-question checking against visible questions only and verify a hidden required question does not block completion
 
 ## 3. In-place answer writing
 
