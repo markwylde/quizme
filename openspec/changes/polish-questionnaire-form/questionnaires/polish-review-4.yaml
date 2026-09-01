@@ -1,0 +1,71 @@
+# Round four: verifying the scroll fix, which I can't test headlessly.
+title: Polish pass — round four
+intro: |
+  Two fixes to check. Only one open text box this time — the duplicate
+  pair last round was my sloppy authoring, not an app bug.
+
+  The scroll fix is the one that matters: I can't test pointer behaviour
+  without a real window, so this needs your hands.
+
+status: submitted
+submitted_at: "2026-09-01T12:50:40+01:00"
+
+questions:
+  - id: scrolling
+    type: select
+    prompt: Does trackpad scrolling work over text fields now?
+    help: >-
+      Open a comment box, then scroll the page with the pointer resting on
+      it. It should keep moving. Try clicking into it and selecting text
+      too — the fix layers something invisible over the field, and I want
+      to know if that broke anything.
+    required: true
+    options:
+      - Fixed, and the field still behaves
+      - Scrolling works but the field feels wrong
+      - Still stuck
+    answer: Fixed, and the field still behaves
+
+  - id: scrolling_detail
+    type: textarea
+    prompt: What's wrong with it?
+    show_if:
+      scrolling:
+        - Scrolling works but the field feels wrong
+        - Still stuck
+
+  - id: progress_bar
+    type: select
+    prompt: Is the progress bar right now?
+    help: >-
+      Full width, along the top edge of the footer. It's also doing the job
+      the separator line was doing.
+    required: true
+    options:
+      - Yes
+      - Nearly — needs a tweak
+      - Put it back beside the count
+    answer: "Yes"
+
+  - id: progress_detail
+    type: text
+    prompt: What tweak?
+    show_if:
+      progress_bar: Nearly — needs a tweak
+
+  - id: next
+    type: select
+    prompt: What next?
+    help: >-
+      Two tasks left on this change, both verification. Then
+      distribute-interrogate-skill is planned and ready to implement.
+    required: true
+    options:
+      - Archive this, then do the plugin
+      - Archive this and stop for now
+      - More polish first
+    answer: Archive this and stop for now
+
+  - id: whats_left
+    type: textarea
+    prompt: Anything else — polish, bugs, or otherwise?
