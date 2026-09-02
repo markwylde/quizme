@@ -38,8 +38,9 @@ type questionHeader struct {
 	note    *widget.Icon
 	tick    *tickMark
 
-	stack *fyne.Container // the prompt, with the answer beneath it
-	row   *fyne.Container
+	stack    *fyne.Container // the prompt, with the answer beneath it
+	trailing *fyne.Container // the marks that sit against the prompt's first line
+	row      *fyne.Container
 
 	// onHover reports the pointer arriving and leaving. The highlight belongs
 	// to the whole card rather than to the header: painted here it was a
@@ -89,13 +90,12 @@ func newQuestionHeader(q *questionnaire.Question, onTap func()) *questionHeader 
 	// it had nothing to do with.
 	h.stack = container.New(&tightStack{}, h.prompt, h.summary)
 
-	// Both the chevron and the trailing group are boxed so they sit against the
-	// prompt's first line. Left to the border they stretch to the full height
-	// of the card and end up floating in the middle of a wrapped prompt.
-	h.row = container.NewBorder(nil, nil,
-		container.NewVBox(h.chevron),
-		container.NewVBox(container.NewHBox(trailing...)),
-		h.stack)
+	// The chevron and the trailing marks are placed against the prompt's first
+	// line of text, which is neither the top of the header nor the middle of
+	// it: a label insets its text by the inner padding, and a wrapped prompt is
+	// several lines tall.
+	h.trailing = container.New(&centredRow{}, trailing...)
+	h.row = container.New(&headerLayout{}, h.chevron, h.stack, h.trailing)
 	h.sync()
 	return h
 }
@@ -232,6 +232,112 @@ func (t *tightStack) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	}
 }
 
+// headerLayout places the fold control and the trailing marks against the first
+// line of the prompt, with the prompt and its answer between them.
+//
+// A border layout cannot do this. Given the whole height of the header it
+// stretches its edges to match, so on a prompt long enough to wrap the chevron
+// and the tick drift towards the middle of the question; boxed to stop that,
+// they sit against the top of the prompt's box instead, which is the inner
+// padding above where the text actually starts.
+type headerLayout struct{}
+
+func (l *headerLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
+	chevron, stack, trailing, ok := l.parts(objects)
+	if !ok {
+		return fyne.Size{}
+	}
+	pad := theme.Size(theme.SizeNamePadding)
+	c, s, t := chevron.MinSize(), stack.MinSize(), trailing.MinSize()
+	return fyne.NewSize(
+		c.Width+pad+s.Width+pad+t.Width,
+		fyne.Max(s.Height, fyne.Max(c.Height, t.Height)),
+	)
+}
+
+func (l *headerLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+	chevron, stack, trailing, ok := l.parts(objects)
+	if !ok {
+		return
+	}
+	pad := theme.Size(theme.SizeNamePadding)
+	c, t := chevron.MinSize(), trailing.MinSize()
+
+	width := size.Width - c.Width - t.Width - 2*pad
+	if width < 0 {
+		width = 0
+	}
+	stack.Resize(fyne.NewSize(width, stack.MinSize().Height))
+	stack.Move(fyne.NewPos(c.Width+pad, 0))
+
+	line := promptLineCentre()
+	chevron.Resize(c)
+	chevron.Move(fyne.NewPos(0, line-c.Height/2))
+	trailing.Resize(t)
+	trailing.Move(fyne.NewPos(size.Width-t.Width, line-t.Height/2))
+}
+
+func (l *headerLayout) parts(objects []fyne.CanvasObject) (chevron, stack, trailing fyne.CanvasObject, ok bool) {
+	if len(objects) != 3 {
+		return nil, nil, nil, false
+	}
+	return objects[0], objects[1], objects[2], true
+}
+
+// promptLineCentre is the middle of a prompt's first line of text, measured from
+// the top of the header.
+func promptLineCentre() float32 {
+	// "Ag" for an ascender and a descender, so the measurement is a full line
+	// whatever the prompt happens to say.
+	line := fyne.MeasureText("Ag", theme.Size(theme.SizeNameText), fyne.TextStyle{Bold: true}).Height
+	return theme.Size(theme.SizeNameInnerPadding) + line/2
+}
+
+// centredRow lays a handful of marks out in a line, each centred on the row's
+// own middle. A box layout would hang them all from the top, which puts a
+// 15-pixel tick and a label with padding of its own on different centrelines.
+type centredRow struct{}
+
+func (r *centredRow) MinSize(objects []fyne.CanvasObject) fyne.Size {
+	pad := theme.Size(theme.SizeNamePadding)
+	var size fyne.Size
+	first := true
+	for _, o := range objects {
+		if !o.Visible() {
+			continue
+		}
+		min := o.MinSize()
+		if !first {
+			size.Width += pad
+		}
+		size.Width += min.Width
+		if min.Height > size.Height {
+			size.Height = min.Height
+		}
+		first = false
+	}
+	return size
+}
+
+func (r *centredRow) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+	pad := theme.Size(theme.SizeNamePadding)
+	x := float32(0)
+	first := true
+	for _, o := range objects {
+		if !o.Visible() {
+			continue
+		}
+		min := o.MinSize()
+		if !first {
+			x += pad
+		}
+		o.Resize(min)
+		o.Move(fyne.NewPos(x, (size.Height-min.Height)/2))
+		x += min.Width
+		first = false
+	}
+}
+
 // The header answers to tapping, to the pointer arriving, and to what the
 // cursor should look like; everything else belongs to what is inside it.
 var (
@@ -239,4 +345,6 @@ var (
 	_ desktop.Hoverable  = (*questionHeader)(nil)
 	_ desktop.Cursorable = (*questionHeader)(nil)
 	_ fyne.Layout        = (*tightStack)(nil)
+	_ fyne.Layout        = (*headerLayout)(nil)
+	_ fyne.Layout        = (*centredRow)(nil)
 )

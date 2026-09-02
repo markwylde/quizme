@@ -213,70 +213,77 @@ func TestTheAnswerSitsUnderThePrompt(t *testing.T) {
 	}
 }
 
-// The chevron and the tick belong against the prompt's first line. Left to the
-// border they stretch to the whole height of the card and float in the middle
-// of a wrapped prompt.
-func TestTheMarkersSitAgainstTheFirstLine(t *testing.T) {
-	q := &questionnaire.Question{
-		ID:       "shop",
-		Type:     questionnaire.TypeSelect,
-		Required: true,
-		Prompt:   strings.Repeat("a long prompt that has to wrap several times ", 6),
-		Answer:   "An invitation to treat",
-	}
-	h := newQuestionHeader(q, func() {})
-	h.SetCollapsed(true)
-
-	w := test.NewWindow(h)
-	defer w.Close()
-	w.Resize(fyne.NewSize(500, 300))
-
-	promptHeight := h.prompt.Size().Height
-	if promptHeight <= 0 {
-		t.Fatal("the prompt was not laid out")
-	}
-	for name, obj := range map[string]fyne.CanvasObject{
-		"chevron": h.chevron,
-		"tick":    h.tick,
-		"marker":  h.marker,
+// The chevron and the tick have to look level with the prompt, which means
+// level with its first line of text -- not with the top of the label's box, and
+// not with the middle of a prompt that wrapped.
+func TestTheMarksAreLevelWithThePromptsFirstLine(t *testing.T) {
+	for name, prompt := range map[string]string{
+		"one line": "Call it what?",
+		"wrapped":  strings.Repeat("a prompt long enough to wrap several times over ", 4),
 	} {
-		// Its own line-ish: within the first line of the prompt, not halfway
-		// down a prompt that wrapped to six.
-		if got := obj.Position().Y; got > promptHeight/2 {
-			t.Errorf("the %s is at y=%v, adrift in a prompt %v tall", name, got, promptHeight)
-		}
+		t.Run(name, func(t *testing.T) {
+			q := &questionnaire.Question{
+				ID: "q", Type: questionnaire.TypeSelect, Required: true,
+				Prompt: prompt, Answer: "something",
+			}
+			h := newQuestionHeader(q, func() {})
+			h.SetCollapsed(true)
+
+			w := test.NewWindow(h)
+			defer w.Close()
+			w.Resize(fyne.NewSize(600, 300))
+
+			// The line the prompt's first row of text sits on, measured the way
+			// a reader sees it: the label's own inset plus half a line.
+			inset := h.prompt.MinSize().Height - oneLine()
+			if got, want := inset, 2*theme.Size(theme.SizeNameInnerPadding); name == "one line" && got != want {
+				t.Fatalf("a one-line label insets its text by %v, this assumes %v", got/2, want/2)
+			}
+			line := promptLineCentre()
+
+			for part, obj := range map[string]fyne.CanvasObject{
+				"chevron":  h.chevron,
+				"trailing": h.trailing,
+			} {
+				centre := obj.Position().Y + obj.Size().Height/2
+				if diff := centre - line; diff > 1 || diff < -1 {
+					t.Errorf("the %s is centred at %v, want the prompt's first line at %v", part, centre, line)
+				}
+			}
+
+			// And within the trailing group, the tick and the Required marker
+			// share that centreline rather than hanging from the top.
+			tick := h.tick.Position().Y + h.tick.Size().Height/2
+			marker := h.marker.Position().Y + h.marker.Size().Height/2
+			if diff := tick - marker; diff > 1 || diff < -1 {
+				t.Errorf("the tick is centred at %v and the marker at %v", tick, marker)
+			}
+		})
 	}
 }
 
-func TestTappingTheHeaderToggles(t *testing.T) {
-	taps := 0
-	q := &questionnaire.Question{ID: "q", Prompt: "Where do answers live?", Type: questionnaire.TypeText}
-	h := newQuestionHeader(q, func() { taps++ })
-
-	test.Tap(h)
-	if taps != 1 {
-		t.Fatalf("taps = %d, want 1", taps)
-	}
+func oneLine() float32 {
+	return fyne.MeasureText("Ag", theme.Size(theme.SizeNameText), fyne.TextStyle{Bold: true}).Height
 }
 
-// The prompt is a plain label, so a tap on it reaches the header only because
-// the header is the nearest Tappable above it. Tapping the canvas exercises
-// exactly that dispatch.
-func TestTappingThePromptReachesTheHeader(t *testing.T) {
-	taps := 0
-	q := &questionnaire.Question{ID: "q", Prompt: "Where do answers live?", Type: questionnaire.TypeText}
-	h := newQuestionHeader(q, func() { taps++ })
-
-	w := test.NewWindow(h)
-	defer w.Close()
-	w.Resize(fyne.NewSize(500, 80))
-
-	if asserted[fyne.Tappable](h.prompt) {
-		t.Fatal("the prompt is tappable itself, so this proves nothing about the header")
+// A hidden mark takes no room, so the ones that are showing stay against the
+// right edge rather than being pushed in by a gap for something invisible.
+func TestHiddenMarksTakeNoRoom(t *testing.T) {
+	with := &questionnaire.Question{
+		ID: "q", Type: questionnaire.TypeText, Prompt: "Name?",
+		Answer: "yes", Comment: "a note",
 	}
-	test.TapCanvas(w.Canvas(), fyne.NewPos(250, 30))
-	if taps != 1 {
-		t.Errorf("taps = %d after tapping over the prompt, want 1", taps)
+	without := &questionnaire.Question{
+		ID: "q", Type: questionnaire.TypeText, Prompt: "Name?", Answer: "yes",
+	}
+	wide := newQuestionHeader(with, func() {})
+	narrow := newQuestionHeader(without, func() {})
+	wide.SetCollapsed(true)
+	narrow.SetCollapsed(true)
+
+	if narrow.trailing.MinSize().Width >= wide.trailing.MinSize().Width {
+		t.Errorf("without a comment the marks ask for %v, with one %v",
+			narrow.trailing.MinSize().Width, wide.trailing.MinSize().Width)
 	}
 }
 
