@@ -237,6 +237,7 @@ func (f *form) buildCard(q *questionnaire.Question) *card {
 	// failing to do, so the separator goes: a card edge and a rule together
 	// only look fussy.
 	c.card = newCardBox(container.NewPadded(container.NewVBox(c.header, c.body)))
+	c.header.SetHoverReporter(c.card.SetHovered)
 	c.root = container.NewPadded(c.card)
 
 	// A question that arrives already answered opens folded. It is settled

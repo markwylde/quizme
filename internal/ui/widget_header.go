@@ -1,11 +1,9 @@
 package ui
 
 import (
-	"image/color"
 	"strings"
 
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/theme"
@@ -40,12 +38,16 @@ type questionHeader struct {
 	note    *widget.Icon
 	tick    *tickMark
 
-	stack      *fyne.Container // the prompt, with the answer beneath it
-	row        *fyne.Container
-	background *canvas.Rectangle
+	stack *fyne.Container // the prompt, with the answer beneath it
+	row   *fyne.Container
+
+	// onHover reports the pointer arriving and leaving. The highlight belongs
+	// to the whole card rather than to the header: painted here it was a
+	// rounded panel inset by the card's own padding, and read as a second card
+	// inside the first.
+	onHover func(bool)
 
 	collapsed bool
-	hovered   bool
 }
 
 func newQuestionHeader(q *questionnaire.Question, onTap func()) *questionHeader {
@@ -85,7 +87,7 @@ func newQuestionHeader(q *questionnaire.Question, onTap func()) *questionHeader 
 	// enough to wrap -- which is most of them, on a real questionnaire -- left
 	// the answer stranded out to the right, level with a line of the question
 	// it had nothing to do with.
-	h.stack = container.NewVBox(h.prompt, h.summary)
+	h.stack = container.New(&tightStack{}, h.prompt, h.summary)
 
 	// Both the chevron and the trailing group are boxed so they sit against the
 	// prompt's first line. Left to the border they stretch to the full height
@@ -99,9 +101,7 @@ func newQuestionHeader(q *questionnaire.Question, onTap func()) *questionHeader 
 }
 
 func (h *questionHeader) CreateRenderer() fyne.WidgetRenderer {
-	h.background = canvas.NewRectangle(h.tint())
-	h.background.CornerRadius = theme.Size(theme.SizeNameSelectionRadius)
-	return widget.NewSimpleRenderer(container.NewStack(h.background, h.row))
+	return widget.NewSimpleRenderer(h.row)
 }
 
 // Content exposes the row. A widget's children hang off its renderer, so
@@ -149,43 +149,30 @@ func (h *questionHeader) sync() {
 	h.Refresh()
 }
 
-// Refresh re-resolves the hover tint for the same reason the card does: a form
-// open across a light/dark switch must not keep the colour it started with.
-func (h *questionHeader) Refresh() {
-	if h.background != nil {
-		h.background.FillColor = h.tint()
-		h.background.CornerRadius = theme.Size(theme.SizeNameSelectionRadius)
-		h.background.Refresh()
-	}
-	h.BaseWidget.Refresh()
-}
-
-// tint is the hover highlight, and nothing at all when the pointer is elsewhere:
-// the card behind it already provides the panel.
-func (h *questionHeader) tint() color.Color {
-	if !h.hovered {
-		return color.Transparent
-	}
-	return theme.Color(theme.ColorNameHover)
-}
-
 func (h *questionHeader) Tapped(*fyne.PointEvent) {
 	if h.onTap != nil {
 		h.onTap()
 	}
 }
 
-func (h *questionHeader) MouseIn(*desktop.MouseEvent) {
-	h.hovered = true
-	h.Refresh()
-}
+// SetHoverReporter says where to report the pointer arriving and leaving.
+func (h *questionHeader) SetHoverReporter(report func(bool)) { h.onHover = report }
 
-func (h *questionHeader) MouseOut() {
-	h.hovered = false
-	h.Refresh()
-}
+func (h *questionHeader) MouseIn(*desktop.MouseEvent) { h.hover(true) }
+
+func (h *questionHeader) MouseOut() { h.hover(false) }
 
 func (h *questionHeader) MouseMoved(*desktop.MouseEvent) {}
+
+func (h *questionHeader) hover(in bool) {
+	if h.onHover != nil {
+		h.onHover(in)
+	}
+}
+
+// Cursor says the row can be pressed, which is the affordance a header has
+// instead of looking like a button.
+func (h *questionHeader) Cursor() desktop.Cursor { return desktop.PointerCursor }
 
 // show is Show or Hide by boolean, which reads better than the four-line if
 // this file would otherwise repeat.
@@ -197,9 +184,59 @@ func show(obj fyne.CanvasObject, visible bool) {
 	obj.Hide()
 }
 
-// The header answers to tapping and to the pointer arriving; everything else
-// belongs to what is inside it.
+// tightStack stacks the prompt and the answer as one block.
+//
+// A box layout would set them a whole padding apart, on top of the padding each
+// label already carries, leaving a gap wide enough to read as two separate
+// things. Overlapping by that built-in padding puts them where two lines of the
+// same paragraph would sit.
+type tightStack struct{}
+
+func (t *tightStack) overlap() float32 { return theme.Size(theme.SizeNameInnerPadding) }
+
+func (t *tightStack) MinSize(objects []fyne.CanvasObject) fyne.Size {
+	var size fyne.Size
+	first := true
+	for _, o := range objects {
+		if !o.Visible() {
+			continue
+		}
+		min := o.MinSize()
+		if min.Width > size.Width {
+			size.Width = min.Width
+		}
+		if !first {
+			size.Height -= t.overlap()
+		}
+		size.Height += min.Height
+		first = false
+	}
+	return size
+}
+
+func (t *tightStack) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+	y := float32(0)
+	first := true
+	for _, o := range objects {
+		if !o.Visible() {
+			continue
+		}
+		if !first {
+			y -= t.overlap()
+		}
+		height := o.MinSize().Height
+		o.Resize(fyne.NewSize(size.Width, height))
+		o.Move(fyne.NewPos(0, y))
+		y += height
+		first = false
+	}
+}
+
+// The header answers to tapping, to the pointer arriving, and to what the
+// cursor should look like; everything else belongs to what is inside it.
 var (
-	_ fyne.Tappable     = (*questionHeader)(nil)
-	_ desktop.Hoverable = (*questionHeader)(nil)
+	_ fyne.Tappable      = (*questionHeader)(nil)
+	_ desktop.Hoverable  = (*questionHeader)(nil)
+	_ desktop.Cursorable = (*questionHeader)(nil)
+	_ fyne.Layout        = (*tightStack)(nil)
 )

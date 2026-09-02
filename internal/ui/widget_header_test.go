@@ -200,8 +200,16 @@ func TestTheAnswerSitsUnderThePrompt(t *testing.T) {
 		t.Errorf("the answer is at y=%v, want it below the prompt at y=%v",
 			h.summary.Position().Y, h.prompt.Position().Y)
 	}
-	if h.summary.Position().Y < h.prompt.Position().Y+h.prompt.Size().Height {
-		t.Error("the answer overlaps the prompt rather than sitting under it")
+	// The two overlap by the padding a label carries of its own, so they read
+	// as one block rather than two things -- but never by more than that, or
+	// the text itself would collide.
+	overlap := (h.prompt.Position().Y + h.prompt.Size().Height) - h.summary.Position().Y
+	if overlap > theme.Size(theme.SizeNameInnerPadding) {
+		t.Errorf("the answer overlaps the prompt by %v, more than the padding it can absorb", overlap)
+	}
+	if got, want := h.stack.MinSize().Height,
+		h.prompt.MinSize().Height+h.summary.MinSize().Height; got >= want {
+		t.Errorf("the stack asks for %v, want less than the %v two loose labels would", got, want)
 	}
 }
 
@@ -272,23 +280,53 @@ func TestTappingThePromptReachesTheHeader(t *testing.T) {
 	}
 }
 
-func TestHeaderTintsOnHover(t *testing.T) {
+// The highlight belongs to the whole card. Painted inside the header it was a
+// rounded panel inset by the card's own padding, and read as a second card.
+func TestHoveringTheHeaderLiftsTheWholeCard(t *testing.T) {
+	f, _ := build(t, uiDoc)
+	c := f.cards["storage"]
+
+	restore := useTheme(t, newTheme())
+	defer restore()
+	c.card.CreateRenderer()
+	plain := c.card.rect.FillColor
+
+	c.header.MouseIn(&desktop.MouseEvent{})
+	if !c.card.Hovered() {
+		t.Fatal("the header did not report the pointer to its card")
+	}
+	if c.card.rect.FillColor == plain {
+		t.Error("hovering should lift the card, or nothing says the row can be pressed")
+	}
+
+	c.header.MouseOut()
+	if c.card.Hovered() {
+		t.Error("the card should drop again when the pointer leaves")
+	}
+	if got := c.card.rect.FillColor; got != plain {
+		t.Errorf("fill = %v after the pointer left, want the plain %v", got, plain)
+	}
+}
+
+// The lift is a translucent overlay in the theme, so it has to be composited
+// onto the card rather than painted as a fill -- the page would show through.
+func TestTheHoverLiftIsOpaque(t *testing.T) {
+	blended := over(color.NRGBA{R: 0x20, G: 0x20, B: 0x20, A: 0xFF},
+		color.NRGBA{R: 0xFF, G: 0xFF, B: 0xFF, A: 0x20})
+	r, g, b, a := blended.RGBA()
+	if a>>8 != 0xFF {
+		t.Errorf("alpha = %v, want an opaque card", a>>8)
+	}
+	if r>>8 <= 0x20 || g>>8 <= 0x20 || b>>8 <= 0x20 {
+		t.Errorf("blended to %v, want it lighter than the base", blended)
+	}
+}
+
+func TestTheHeaderAsksForAPointer(t *testing.T) {
 	q := &questionnaire.Question{ID: "q", Prompt: "?", Type: questionnaire.TypeText}
 	h := newQuestionHeader(q, func() {})
-	h.CreateRenderer()
-
-	if h.background.FillColor != color.Transparent {
-		t.Error("an un-hovered header should add nothing to the card behind it")
-	}
-
-	h.MouseIn(&desktop.MouseEvent{})
-	if h.background.FillColor == color.Transparent {
-		t.Error("hovering should tint the header, or nothing says it can be pressed")
-	}
-
-	h.MouseOut()
-	if h.background.FillColor != color.Transparent {
-		t.Error("the tint should go when the pointer leaves")
+	if got := h.Cursor(); got != desktop.PointerCursor {
+		t.Errorf("cursor = %v, want a pointer over something that can be pressed", got)
 	}
 }
 
