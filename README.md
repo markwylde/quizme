@@ -136,8 +136,8 @@ Each question sits on its own card, so they stay distinct while you scroll.
 Cards **fold as you finish with them**, so the page is always a list of what is
 left. A questionnaire opens with anything already answered folded and everything
 outstanding open. Pick an option, a yes or no, a point on a scale, or confirm a
-ranking, and that question drops to a single line too — its prompt, the answer
-you gave, and a green tick, on a card tinted faintly green. A question you fold
+ranking, and that question folds too — down to its prompt, the answer you gave
+on the line beneath it, and a green tick, on a card tinted faintly green. A question you fold
 with nothing answered keeps the ordinary colour: putting something aside is not
 the same as finishing it.
 

@@ -120,8 +120,8 @@ func TestAnswerSummaryIsOneShortLine(t *testing.T) {
 	if !strings.HasSuffix(got, "…") {
 		t.Errorf("summary = %q, want it truncated with an ellipsis", got)
 	}
-	if len([]rune(got)) > previewLimit+1 {
-		t.Errorf("summary is %d runes, want no more than %d", len([]rune(got)), previewLimit+1)
+	if len([]rune(got)) > summaryLimit+1 {
+		t.Errorf("summary is %d runes, want no more than %d", len([]rune(got)), summaryLimit+1)
 	}
 
 	multi := questionnaire.Question{Type: questionnaire.TypeTextarea, Answer: "first line\nsecond line"}
@@ -135,10 +135,19 @@ func TestAnswerSummaryIsOneShortLine(t *testing.T) {
 
 	many := questionnaire.Question{
 		Type:   questionnaire.TypeMultiselect,
-		Answer: []string{"one option", "two option", "three option", "four option", "five option"},
+		Answer: []string{strings.Repeat("option, ", 40)},
 	}
-	if got := answerSummary(&many); len([]rune(got)) > previewLimit+1 {
+	if got := answerSummary(&many); len([]rune(got)) > summaryLimit+1 {
 		t.Errorf("a long multiselect summary is %d runes: %q", len([]rune(got)), got)
+	}
+
+	// The comment preview keeps its own, shorter limit: it shares a row with a
+	// toggle, where the answer has a line to itself.
+	if summaryLimit <= previewLimit {
+		t.Errorf("summaryLimit %d should be longer than the comment's %d", summaryLimit, previewLimit)
+	}
+	if got := preview(strings.Repeat("a", 200)); len([]rune(got)) > previewLimit+1 {
+		t.Errorf("the comment preview grew to %d runes", len([]rune(got)))
 	}
 }
 

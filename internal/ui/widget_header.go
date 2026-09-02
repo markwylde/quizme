@@ -23,8 +23,9 @@ import (
 // bold prompt beside a caption, a drawn mark, and an icon; Fyne's hit test
 // walks up to the nearest Tappable, so the labels inside still deliver the tap.
 //
-// Collapsed, the row is the only thing left of the question, so it carries the
-// answer as well as the prompt: a folded page reads as a review of what the
+// Collapsed, the header is the only thing left of the question, so it carries
+// the answer as well as the prompt -- on its own line beneath it, where a
+// wrapped prompt cannot strand it: a folded page reads as a review of what the
 // responder has said rather than a list of prompts.
 type questionHeader struct {
 	widget.BaseWidget
@@ -39,6 +40,7 @@ type questionHeader struct {
 	note    *widget.Icon
 	tick    *tickMark
 
+	stack      *fyne.Container // the prompt, with the answer beneath it
 	row        *fyne.Container
 	background *canvas.Rectangle
 
@@ -56,11 +58,12 @@ func newQuestionHeader(q *questionnaire.Question, onTap func()) *questionHeader 
 	h.prompt.TextStyle = fyne.TextStyle{Bold: true}
 	h.prompt.Wrapping = fyne.TextWrapWord
 
-	// The summary asks for the width its text needs, which answerSummary has
-	// already capped. Fyne's own truncation is no use here: a truncating label
-	// reports almost no minimum width, so beside the prompt it collapses to a
-	// bare ellipsis and shows none of the answer.
+	// The summary has a line of its own beneath the prompt, so it can take the
+	// width that is left and truncate against it. (Beside the prompt it could
+	// not: a truncating label reports almost no minimum width, and in a row
+	// driven by minimum widths it collapsed to a bare ellipsis.)
 	h.summary = captionLabel("")
+	h.summary.Truncation = fyne.TextTruncateEllipsis
 
 	// The same icon the comment toggle uses, so a folded question says "there
 	// is a note in here" in the vocabulary the open one taught.
@@ -68,7 +71,7 @@ func newQuestionHeader(q *questionnaire.Question, onTap func()) *questionHeader 
 
 	h.tick = newTickMark()
 
-	trailing := []fyne.CanvasObject{h.summary}
+	var trailing []fyne.CanvasObject
 	if q.Required {
 		// The required marker sits on the prompt's own line. On its own row it
 		// read as another instruction to take in; up here it is just a label.
@@ -78,7 +81,19 @@ func newQuestionHeader(q *questionnaire.Question, onTap func()) *questionHeader 
 	}
 	trailing = append(trailing, h.note, h.tick)
 
-	h.row = container.NewBorder(nil, nil, h.chevron, container.NewHBox(trailing...), h.prompt)
+	// The answer goes under the prompt rather than beside it. A prompt long
+	// enough to wrap -- which is most of them, on a real questionnaire -- left
+	// the answer stranded out to the right, level with a line of the question
+	// it had nothing to do with.
+	h.stack = container.NewVBox(h.prompt, h.summary)
+
+	// Both the chevron and the trailing group are boxed so they sit against the
+	// prompt's first line. Left to the border they stretch to the full height
+	// of the card and end up floating in the middle of a wrapped prompt.
+	h.row = container.NewBorder(nil, nil,
+		container.NewVBox(h.chevron),
+		container.NewVBox(container.NewHBox(trailing...)),
+		h.stack)
 	h.sync()
 	return h
 }

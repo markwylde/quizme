@@ -143,17 +143,24 @@ func (c *commentField) focus() {
 }
 
 // preview renders the start of a comment on one line.
-func preview(text string) string {
+func preview(text string) string { return previewTo(text, previewLimit) }
+
+// previewTo renders the start of some text on one line, no longer than limit.
+//
+// The collapsed comment and a collapsed question's answer both need this, but
+// not at the same length: the comment shares its row with a toggle, while the
+// answer has a line of its own to spend.
+func previewTo(text string, limit int) string {
 	line := text
 	if i := strings.IndexByte(line, '\n'); i >= 0 {
 		line = strings.TrimSpace(line[:i])
 	}
 	runes := []rune(line)
-	if len(runes) <= previewLimit {
+	if len(runes) <= limit {
 		if len(runes) < len([]rune(text)) {
 			return line + "…" // there were further lines
 		}
 		return line
 	}
-	return strings.TrimRight(string(runes[:previewLimit]), " ") + "…"
+	return strings.TrimRight(string(runes[:limit]), " ") + "…"
 }

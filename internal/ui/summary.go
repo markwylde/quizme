@@ -8,6 +8,12 @@ import (
 	"github.com/markwylde/interrogate/internal/questionnaire"
 )
 
+// summaryLimit is how much of an answer a collapsed question shows. Longer than
+// the comment preview because the answer has a line to itself, and generous
+// enough that most answers arrive whole; the label truncates against the window
+// if one does not.
+const summaryLimit = 120
+
 // answerSummary renders a question's answer on one line, for the header of a
 // collapsed question.
 //
@@ -16,12 +22,15 @@ import (
 // value printed. An unanswered question summarises to nothing: the header shows
 // the prompt alone, and its lack of a tick says the rest.
 //
-// Shortening goes through the same preview helper the collapsed comment uses, so
-// a long answer and a long comment truncate identically.
+// Shortening goes through the same helper the collapsed comment uses, at a
+// longer limit: the answer sits on a line of its own under the prompt, so there
+// is room for most answers in full.
 func answerSummary(q *questionnaire.Question) string {
 	if q == nil || !q.HasAnswer() {
 		return ""
 	}
+
+	shorten := func(text string) string { return previewTo(text, summaryLimit) }
 
 	switch q.Type {
 	case questionnaire.TypeBoolean:
@@ -41,7 +50,7 @@ func answerSummary(q *questionnaire.Question) string {
 		}
 	case questionnaire.TypeMultiselect:
 		if v, ok := q.Answer.([]string); ok {
-			return preview(strings.Join(v, ", "))
+			return shorten(strings.Join(v, ", "))
 		}
 	case questionnaire.TypeRank:
 		if v, ok := q.Answer.([]string); ok {
@@ -49,15 +58,15 @@ func answerSummary(q *questionnaire.Question) string {
 			for i, option := range v {
 				ranked = append(ranked, fmt.Sprintf("%d. %s", i+1, option))
 			}
-			return preview(strings.Join(ranked, ", "))
+			return shorten(strings.Join(ranked, ", "))
 		}
 	case questionnaire.TypeSelect, questionnaire.TypeText, questionnaire.TypeTextarea:
 		if v, ok := q.Answer.(string); ok {
-			return preview(v)
+			return shorten(v)
 		}
 	}
 
 	// An answer of an unexpected shape is still worth showing: better a
 	// printed value than a question that looks unanswered.
-	return preview(fmt.Sprint(q.Answer))
+	return shorten(fmt.Sprint(q.Answer))
 }

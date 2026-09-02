@@ -48,7 +48,7 @@ It SHALL also accept a `--validate` flag, which checks the questionnaire and exi
 
 All questions SHALL be presented together on one vertically scrolling page, so the responder can read ahead, answer in any order, and revise earlier answers before submitting.
 
-A question MAY be presented collapsed to a single row rather than at full height, provided every question is still on the page in its document order and can be returned to full height in one action. Collapsing SHALL NOT remove a question from the page, reorder it, or prevent it from being answered or revised.
+A question MAY be presented collapsed to its prompt and the answer it carries, rather than at full height, provided every question is still on the page in its document order and can be returned to full height in one action. Collapsing SHALL NOT remove a question from the page, reorder it, or prevent it from being answered or revised.
 
 #### Scenario: Questions exceed the window height
 - **WHEN** the questionnaire is taller than the window
@@ -296,7 +296,7 @@ Scrolling the questionnaire SHALL continue to work wherever the pointer rests, i
 ### Requirement: Questions can be collapsed and expanded
 
 
-Each question SHALL have an expanded presentation, showing its prompt, help, answer control and comment field, and a collapsed presentation occupying a single row.
+Each question SHALL have an expanded presentation, showing its prompt, help, answer control and comment field, and a collapsed presentation carrying only its prompt, the answer it holds, and the marks that describe it.
 
 When the questionnaire opens, a question that already carries an answer SHALL be presented collapsed, and a question with no answer SHALL be presented expanded. A questionnaire therefore opens showing what is left to do rather than what is already settled, and nothing outstanding is hidden from a responder seeing the page for the first time. A comment is not an answer for this purpose.
 
@@ -320,7 +320,7 @@ Each question's header SHALL act as a control that collapses it when expanded an
 
 #### Scenario: Collapsing by hand
 - **WHEN** the responder activates the header of an expanded question
-- **THEN** that question collapses to a single row and its control, help text and comment field are no longer shown
+- **THEN** that question collapses to its prompt and answer, and its control, help text and comment field are no longer shown
 
 #### Scenario: Expanding by hand
 - **WHEN** the responder activates the header of a collapsed question
@@ -393,30 +393,35 @@ Clearing a question's answer SHALL NOT collapse it.
 
 ### Requirement: A collapsed question shows what was answered
 
-
 A collapsed question SHALL show its prompt, a single-line rendering of the answer it carries, and a mark distinguishing an answered question from an unanswered one, so that a page of collapsed questions reads as a review of what the responder has said.
 
-The completion mark SHALL be positioned consistently at the trailing edge of the row, SHALL be shown only for a question that carries an answer, and SHALL be drawn in a colour that reads as success in both the light and dark presentations.
+The answer SHALL be presented beneath the prompt, in the prompt's own column, rather than beside it. Most prompts on a real questionnaire are long enough to wrap, and an answer set beside one is left level with whichever line of the question it happens to fall against, reading as part of it.
 
-A collapsed question that carries an answer SHALL additionally be presented on a panel whose colour reads as settled — the card colour with a green cast — so a page of collapsed rows can be read at a glance rather than mark by mark. That colour SHALL be distinguishable from the ordinary card colour and SHALL remain quiet enough not to compete with the row's own content, in both presentations. A collapsed question with no answer SHALL keep the ordinary card colour, so putting a question aside never looks like finishing it.
+The completion mark SHALL be positioned consistently at the trailing edge, SHALL be aligned with the first line of the prompt rather than with the middle of a wrapped one, SHALL be shown only for a question that carries an answer, and SHALL be drawn in a colour that reads as success in both the light and dark presentations. Any other marks the collapsed question carries, and the control that folds it, SHALL be aligned the same way.
+
+A collapsed question that carries an answer SHALL additionally be presented on a panel whose colour reads as settled — the card colour with a green cast — so a page of collapsed questions can be read at a glance rather than mark by mark. That colour SHALL be distinguishable from the ordinary card colour and SHALL remain quiet enough not to compete with the question's own content, in both presentations. A collapsed question with no answer SHALL keep the ordinary card colour, so putting a question aside never looks like finishing it.
 
 An answer too long for one row SHALL be shortened rather than wrapped or allowed to widen the page.
 
 #### Scenario: An answered question collapsed
 - **WHEN** an answered question is collapsed
-- **THEN** its row shows the prompt, a rendering of the answer, and the completion mark
+- **THEN** it shows the prompt, a rendering of the answer beneath it, and the completion mark
 
 #### Scenario: An unanswered question collapsed
 - **WHEN** an unanswered question is collapsed
-- **THEN** its row shows the prompt and no completion mark
+- **THEN** it shows the prompt and no completion mark
 
 #### Scenario: Every type has a one-line answer rendering
 - **WHEN** a collapsed question is of any of the supported types, including a `multiselect` with several options chosen and a `rank` with a confirmed order
-- **THEN** its answer is rendered on the single row in a form a reader can recognise as that answer
+- **THEN** its answer is rendered on one line in a form a reader can recognise as that answer
 
 #### Scenario: A long answer
-- **WHEN** a collapsed question's answer is longer than the row can show
+- **WHEN** a collapsed question's answer is longer than the space it has
 - **THEN** it is shortened to fit, and the page does not scroll sideways or grow taller for it
+
+#### Scenario: A prompt long enough to wrap
+- **WHEN** a collapsed question's prompt wraps onto several lines
+- **THEN** its answer stays beneath the prompt in the prompt's own column, and the completion mark and the fold control stay level with the prompt's first line
 
 #### Scenario: Reviewing by scanning
 - **WHEN** the responder has answered and collapsed several questions
