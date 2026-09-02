@@ -81,6 +81,14 @@ func (t *fixedVariantTheme) QuestionCard(_ fyne.ThemeVariant) color.Color {
 	return color.Transparent
 }
 
+// SettledCard pins the variant for the finished-question panel likewise.
+func (t *fixedVariantTheme) SettledCard(_ fyne.ThemeVariant) color.Color {
+	if provider, ok := t.Theme.(cardProvider); ok {
+		return provider.SettledCard(t.variant)
+	}
+	return color.Transparent
+}
+
 // controlsDoc shows one question of every type, for reviewing the controls
 // themselves rather than the page.
 const controlsDoc = `

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/test"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
@@ -126,5 +127,142 @@ func TestCardExposesItsContent(t *testing.T) {
 	c := newCardBox(label)
 	if c.Content() != fyne.CanvasObject(label) {
 		t.Error("the card does not expose what it wraps")
+	}
+}
+
+// --- The settled panel ---------------------------------------------------
+
+// A folded, answered question is tinted green. On a page of folded rows the
+// tint is what carries at a glance; the tick is what confirms it up close.
+func TestSettledCardContrastsWithThePage(t *testing.T) {
+	const (
+		lower = 4
+		upper = 24
+	)
+	for name, p := range map[string]palette{"light": lightPalette, "dark": darkPalette} {
+		got := contrast(p.settled, p.background)
+		if got < lower {
+			t.Errorf("%s settled card is only %d points from the page; it will not read as a card", name, got)
+		}
+		if got > upper {
+			t.Errorf("%s settled card is %d points from the page, louder than the limit of %d", name, got, upper)
+		}
+	}
+}
+
+func TestSettledCardIsGreenButQuiet(t *testing.T) {
+	for name, p := range map[string]palette{"light": lightPalette, "dark": darkPalette} {
+		r, g, b, _ := p.settled.RGBA()
+		red, green, blue := int(r>>8), int(g>>8), int(b>>8)
+		if green <= red || green <= blue {
+			t.Errorf("%s settled card %v has no green cast", name, p.settled)
+		}
+		// Subtle: a saturated green would turn a finished questionnaire into a
+		// wall of colour.
+		if green-red > 24 || green-blue > 24 {
+			t.Errorf("%s settled card %v is too saturated for a background", name, p.settled)
+		}
+		// But different enough from the plain card to be seen beside one.
+		if got := contrast(p.settled, p.card); got < 3 {
+			t.Errorf("%s settled card is only %d points from the plain card", name, got)
+		}
+	}
+}
+
+func TestSettledCardFollowsTheVariant(t *testing.T) {
+	th := newTheme().(cardProvider)
+	light := th.SettledCard(theme.VariantLight)
+	dark := th.SettledCard(theme.VariantDark)
+	if light != lightPalette.settled {
+		t.Errorf("light settled = %v, want the palette's %v", light, lightPalette.settled)
+	}
+	if dark != darkPalette.settled {
+		t.Errorf("dark settled = %v, want the palette's %v", dark, darkPalette.settled)
+	}
+	r, g, b, _ := dark.RGBA()
+	if int(r>>8)+int(g>>8)+int(b>>8) > 200 {
+		t.Errorf("the dark settled card %v is too light for a dark background", dark)
+	}
+}
+
+func TestCardBoxPaintsTheSettledPanelWhenSettled(t *testing.T) {
+	// The test theme knows nothing of card colours, so this asserts through the
+	// form's own theme.
+	restore := useTheme(t, newTheme())
+	defer restore()
+
+	c := newCardBox(widget.NewLabel("x"))
+	c.CreateRenderer()
+	plain := c.rect.FillColor
+
+	c.SetSettled(true)
+	if !c.Settled() {
+		t.Fatal("the card did not take the settled state")
+	}
+	if c.rect.FillColor == plain {
+		t.Error("a settled card should not paint the plain panel")
+	}
+	if got, want := c.rect.FillColor, lightPalette.settled; got != want {
+		t.Errorf("settled fill = %v, want %v", got, want)
+	}
+
+	c.SetSettled(false)
+	if got := c.rect.FillColor; got != plain {
+		t.Errorf("fill = %v after unsettling, want the plain %v", got, plain)
+	}
+}
+
+func TestOnlyAFoldedAnsweredQuestionReadsAsSettled(t *testing.T) {
+	f, doc := build(t, uiDoc)
+
+	// Answered and folded: settled.
+	find[*widget.RadioGroup](t, f, "storage").SetSelected("sidecar")
+	storage := f.cards["storage"]
+	if !storage.collapsed() {
+		t.Fatal("answering should have folded it")
+	}
+	if !storage.card.Settled() {
+		t.Error("a folded, answered question should read as settled")
+	}
+
+	// Opened again to revise: no longer a finished row, so no tint.
+	test.Tap(storage.header)
+	if storage.card.Settled() {
+		t.Error("an expanded question should paint the plain panel, tick or no tick")
+	}
+
+	// Folded by hand with nothing answered: put aside, not finished.
+	aside := f.cards["ship"]
+	test.Tap(aside.header)
+	if !aside.collapsed() {
+		t.Fatal("tapping should have folded it")
+	}
+	if aside.card.Settled() {
+		t.Error("a folded question with no answer must not look finished")
+	}
+	if doc.Question("ship").HasAnswer() {
+		t.Error("folding a question is not answering it")
+	}
+}
+
+func TestQuestionsFoldedOnLoadReadAsSettled(t *testing.T) {
+	f, _ := build(t, `
+title: Reopened
+questions:
+  - id: done
+    type: select
+    prompt: Settled?
+    options: [yes, no]
+    answer: yes
+  - id: outstanding
+    type: select
+    prompt: Not settled?
+    options: [yes, no]
+`)
+	if !f.cards["done"].card.Settled() {
+		t.Error("a question folded on load carries an answer, so it should read as settled")
+	}
+	if f.cards["outstanding"].card.Settled() {
+		t.Error("an unanswered question should paint the plain panel")
 	}
 }

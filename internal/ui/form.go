@@ -62,19 +62,52 @@ type form struct {
 	summary  *widget.Label
 	progress *progressBar
 	counted  *widget.Label
+
+	// building is set while the page is being assembled. Restoring an answer
+	// already in the file goes through the same control callbacks a responder's
+	// gesture does -- Fyne's SetSelected fires OnChanged -- and a restore is
+	// not a gesture. How an answered question opens is decided once, in
+	// buildCard, rather than falling out of however many times a control
+	// happens to report itself on the way up.
+	building bool
 }
 
-// card is one question: its prompt, its control, its comment box, and the
-// warning shown when it is required and unanswered.
+// foldState is how a question is presented, and why.
+//
+// The distinction between the two open states is what keeps auto-collapse from
+// fighting the responder: a question they opened themselves stays open, whatever
+// they answer next.
+type foldState int
+
+const (
+	foldAuto   foldState = iota // expanded, and the responder has not said otherwise
+	foldOpen                    // expanded because the responder opened it
+	foldClosed                  // collapsed
+)
+
+// card is one question: the header that folds it, its control, its comment box,
+// and the warning shown when it is required and unanswered.
 type card struct {
 	question *questionnaire.Question
 	root     *fyne.Container
+	header   *questionHeader
+	body     *fyne.Container
 	control  fyne.CanvasObject
 	warning  *widget.Label
 	rank     *rankWidget
 	comment  *commentField
+	done     *widget.Button
 	card     *cardBox
+
+	fold foldState
 }
+
+// collapsed reports whether the question is folded to its header.
+func (c *card) collapsed() bool { return c.fold == foldClosed }
+
+// pinned reports whether the responder has decided this question's presentation
+// for themselves, which an answer must not then undo.
+func (c *card) pinned() bool { return c.fold != foldAuto }
 
 func newForm(doc *questionnaire.Document, win fyne.Window) *form {
 	f := &form{
@@ -92,6 +125,9 @@ func newForm(doc *questionnaire.Document, win fyne.Window) *form {
 // build assembles the whole window: a fixed header, one scrolling page of
 // questions, and a fixed footer holding the actions.
 func (f *form) build() fyne.CanvasObject {
+	f.building = true
+	defer func() { f.building = false }()
+
 	f.list = container.NewVBox()
 
 	// The title and intro scroll away with the questions. They are context,
@@ -157,23 +193,15 @@ func (f *form) footer() fyne.CanvasObject {
 
 // buildCard lays out one question. Every question gets a comment box, whatever
 // its type: the note is often the most precise thing the responder has to say.
+//
+// The prompt lives in the header, which is also the control that folds the
+// question; everything else lives in the body, which is what folding hides.
 func (f *form) buildCard(q *questionnaire.Question) *card {
 	c := &card{question: q}
 
-	prompt := widget.NewLabel(q.Prompt)
-	prompt.TextStyle = fyne.TextStyle{Bold: true}
-	prompt.Wrapping = fyne.TextWrapWord
+	c.header = newQuestionHeader(q, func() { f.toggle(c) })
 
-	// The required marker sits on the prompt's own line. On its own row it read
-	// as another instruction to take in; beside the prompt it is just a label.
-	var heading fyne.CanvasObject = prompt
-	if q.Required {
-		marker := captionLabel("Required")
-		marker.Importance = widget.MediumImportance
-		heading = container.NewBorder(nil, nil, nil, marker, prompt)
-	}
-
-	parts := []fyne.CanvasObject{heading}
+	var parts []fyne.CanvasObject
 	if help := strings.TrimSpace(q.Help); help != "" {
 		body := widget.NewLabel(help)
 		body.Wrapping = fyne.TextWrapWord
@@ -184,7 +212,18 @@ func (f *form) buildCard(q *questionnaire.Question) *card {
 	c.control = f.control(q, c)
 	parts = append(parts, c.control)
 
-	c.comment = newCommentField(q.Comment, func(s string) { q.Comment = s }, f.scrollable)
+	c.comment = newCommentField(q.Comment, func(s string) {
+		q.Comment = s
+		c.header.Sync() // so a folded question still says it carries a note
+	}, f.scrollable)
+	// An answer that is typed or ticked together has no single settling
+	// gesture, so those questions get one to press. It rides on the comment
+	// toggle's row rather than taking a row of its own.
+	if needsDone(q.Type) {
+		c.done = widget.NewButton("Done", func() { f.finished(q) })
+		c.done.Importance = widget.LowImportance
+		c.comment.SetTrailing(c.done)
+	}
 	parts = append(parts, c.comment.root)
 
 	c.warning = widget.NewLabel("")
@@ -192,12 +231,36 @@ func (f *form) buildCard(q *questionnaire.Question) *card {
 	c.warning.Hide()
 	parts = append(parts, c.warning)
 
+	c.body = container.NewVBox(parts...)
+
 	// The card and the gap around it do the separating a hairline rule was
 	// failing to do, so the separator goes: a card edge and a rule together
 	// only look fussy.
-	c.card = newCardBox(container.NewPadded(container.NewVBox(parts...)))
+	c.card = newCardBox(container.NewPadded(container.NewVBox(c.header, c.body)))
 	c.root = container.NewPadded(c.card)
+
+	// A question that arrives already answered opens folded. It is settled
+	// work, and a questionnaire reopened -- or authored with answers in it --
+	// should open showing what is left rather than what is done. Everything
+	// still unanswered opens in full, so nothing outstanding is ever hidden
+	// from a responder seeing the page for the first time.
+	if q.HasAnswer() {
+		c.fold = foldClosed
+		f.applyFold(c)
+	}
 	return c
+}
+
+// needsDone reports whether a type's answer is composed over several actions,
+// and so cannot be folded the moment it changes: folding a field mid-word would
+// take it away from the responder still writing in it.
+func needsDone(t questionnaire.Type) bool {
+	switch t {
+	case questionnaire.TypeText, questionnaire.TypeTextarea,
+		questionnaire.TypeNumber, questionnaire.TypeMultiselect:
+		return true
+	}
+	return false
 }
 
 // control builds the answer control for a question's declared type.
@@ -228,7 +291,7 @@ func (f *form) selectControl(q *questionnaire.Question) fyne.CanvasObject {
 	current, _ := q.Answer.(string)
 
 	if len(q.Options) >= radioLimit {
-		sel := widget.NewSelect(q.Options, func(v string) { f.set(q, v) })
+		sel := widget.NewSelect(q.Options, func(v string) { f.set(q, v); f.settle(q) })
 		sel.PlaceHolder = "Choose one"
 		if current != "" {
 			sel.SetSelected(current)
@@ -236,7 +299,7 @@ func (f *form) selectControl(q *questionnaire.Question) fyne.CanvasObject {
 		return sel
 	}
 
-	group := widget.NewRadioGroup(q.Options, func(v string) { f.set(q, v) })
+	group := widget.NewRadioGroup(q.Options, func(v string) { f.set(q, v); f.settle(q) })
 	group.Required = false // an optional question must be clearable
 	if current != "" {
 		group.SetSelected(current)
@@ -258,6 +321,9 @@ func (f *form) textControl(q *questionnaire.Question) fyne.CanvasObject {
 		entry.SetText(current)
 	}
 	entry.OnChanged = func(s string) { f.set(q, s) }
+	// Enter says the same thing the Done action does, for a field where there is
+	// only ever one line to finish.
+	entry.OnSubmitted = func(string) { f.finished(q) }
 	return f.scrollable(entry)
 }
 
@@ -333,6 +399,7 @@ func (f *form) numberControl(q *questionnaire.Question) fyne.CanvasObject {
 		}
 		f.set(q, v)
 	}
+	entry.OnSubmitted = func(string) { f.finished(q) }
 	return f.scrollable(entry)
 }
 
@@ -348,6 +415,7 @@ func (f *form) booleanControl(q *questionnaire.Question) fyne.CanvasObject {
 		default:
 			f.set(q, nil)
 		}
+		f.settle(q)
 	})
 	group.Horizontal = true
 	if current, ok := q.Answer.(bool); ok {
@@ -375,6 +443,7 @@ func (f *form) scaleControl(q *questionnaire.Question) fyne.CanvasObject {
 			return
 		}
 		f.set(q, *v)
+		f.settle(q)
 	})
 }
 
@@ -385,7 +454,10 @@ func (f *form) rankControl(q *questionnaire.Question, c *card) fyne.CanvasObject
 	}
 
 	c.rank = newRankWidget(order, func(v []string) { f.set(q, v) })
-	confirm := widget.NewButton("Use this order", func() { c.rank.confirm() })
+	confirm := widget.NewButton("Use this order", func() {
+		c.rank.confirm()
+		f.settle(q)
+	})
 
 	hint := captionLabel("Drag a row, or use the arrows, to reorder.")
 	return container.NewVBox(c.rank, container.NewBorder(nil, nil, hint, confirm))
@@ -428,7 +500,85 @@ func parseBounded(q *questionnaire.Question, s string) (float64, error) {
 // set records an answer and re-evaluates which questions apply.
 func (f *form) set(q *questionnaire.Question, v any) {
 	q.Answer = v
+	if c, ok := f.cards[q.ID]; ok {
+		c.header.Sync() // the tick and the folded answer follow the answer
+		// The warning is about an answer that was missing, so it goes as soon
+		// as one arrives rather than waiting for the next refused submit.
+		if q.HasAnswer() {
+			c.warning.Hide()
+		}
+	}
 	f.syncVisibility()
+}
+
+// toggle folds or unfolds a question because the responder asked it to, and
+// records that they asked: from here on their choice outranks the automatic one.
+func (f *form) toggle(c *card) {
+	if c.collapsed() {
+		c.fold = foldOpen
+	} else {
+		c.fold = foldClosed
+	}
+	f.applyFold(c)
+}
+
+// settle folds a question whose answer is finished with.
+//
+// It is the automatic path, so it defers to a responder who has already decided
+// how they want the question presented, and it leaves a question alone that has
+// no answer -- clearing one is not finishing with it.
+func (f *form) settle(q *questionnaire.Question) {
+	if f.building {
+		return
+	}
+	c, ok := f.cards[q.ID]
+	if !ok || c.pinned() || !q.HasAnswer() {
+		return
+	}
+	c.fold = foldClosed
+	f.applyFold(c)
+}
+
+// finished is the responder saying they are done with a question -- the "Done"
+// action, or Enter in a single-line field. It reads as the same intent as
+// folding the question by hand, so it does the same thing.
+func (f *form) finished(q *questionnaire.Question) {
+	c, ok := f.cards[q.ID]
+	if !ok {
+		return
+	}
+	c.fold = foldClosed
+	f.applyFold(c)
+}
+
+// expand forces a question open, whatever the responder had it set to, for the
+// one case where they have to see it: a submit refused because of it. The fold
+// returns to automatic, so answering it folds it away again.
+func (f *form) expand(c *card) {
+	if !c.collapsed() {
+		return
+	}
+	c.fold = foldAuto
+	f.applyFold(c)
+}
+
+// applyFold puts a card's presentation in step with its fold state.
+//
+// The body is hidden rather than discarded, so the control, the comment field
+// and their bindings are the same objects folded or not.
+func (f *form) applyFold(c *card) {
+	show(c.body, !c.collapsed())
+	c.header.SetCollapsed(c.collapsed())
+	if c.card != nil {
+		// Only a folded question with an answer reads as settled. Folded and
+		// unanswered is the responder putting something aside, which is not
+		// the same thing and must not look like it.
+		c.card.SetSettled(c.collapsed() && c.question.HasAnswer())
+		c.card.Refresh() // the card is a different height now
+	}
+	if f.list != nil {
+		f.list.Refresh()
+	}
 }
 
 // syncVisibility shows and hides cards to match the current answers.
@@ -525,9 +675,15 @@ func (f *form) flagMissing(missing []*questionnaire.Question) {
 		if c, ok := f.cards[q.ID]; ok {
 			c.warning.SetText("This question needs an answer before you can submit.")
 			c.warning.Show()
+			// A warning inside a fold is no warning at all, so the questions
+			// standing in the way of a submit are opened whatever the responder
+			// had them set to.
+			f.expand(c)
 		}
 	}
 	f.list.Refresh()
+	// After the refresh, not before: the cards just opened have moved
+	// everything below them down the page.
 	f.scrollTo(missing[0].ID)
 
 	names := make([]string, 0, len(missing))

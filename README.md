@@ -129,9 +129,24 @@ nothing and is never reported.
 | `number`      | a number                                  | `min` / `max` enforced as you type |
 | `boolean`     | `true` or `false`                         | two choices, so "no" and "unanswered" stay distinct |
 | `scale`       | a whole number                            | `min` / `max`, default 1–5        |
-| `rank`        | all of `options`, reordered               | drag, or use the arrows           |
+| `rank`        | all of `options`, reordered               | drag, or use the arrows; rows slide to their new place |
 
 Each question sits on its own card, so they stay distinct while you scroll.
+
+Cards **fold as you finish with them**, so the page is always a list of what is
+left. A questionnaire opens with anything already answered folded and everything
+outstanding open. Pick an option, a yes or no, a point on a scale, or confirm a
+ranking, and that question drops to a single line too — its prompt, the answer
+you gave, and a green tick, on a card tinted faintly green. A question you fold
+with nothing answered keeps the ordinary colour: putting something aside is not
+the same as finishing it.
+
+Typed and multi-part answers have no single settling gesture, so `text`,
+`number`, `textarea` and `multiselect` fold on **Done** instead, or on Enter in a
+single-line field; nothing folds mid-word. Click any header to fold or unfold it
+yourself, answered or not, and what you choose by hand stays as you left it. A
+submit refused for a missing answer opens what it flags, so nothing you have to
+fix stays hidden.
 
 Every question also takes a **comment**, whatever its type, answered or not.
 The field rests collapsed behind a small affordance so a page of questions is

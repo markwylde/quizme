@@ -25,6 +25,8 @@ type commentField struct {
 	root     *fyne.Container
 	expanded bool
 
+	// trailing is an action sharing the toggle's row, if the question has one.
+	trailing fyne.CanvasObject
 	// shield keeps the page scrolling while the pointer is over the field.
 	shield func(fyne.CanvasObject) fyne.CanvasObject
 	// wrapped is what actually goes in the layout: the entry, shielded.
@@ -72,6 +74,17 @@ func newCommentField(current string, onChange func(string), shield func(fyne.Can
 	c.apply()
 
 	return c
+}
+
+// SetTrailing puts an action on the toggle's own row, at its trailing edge.
+//
+// A question whose answer has no settling gesture of its own needs something to
+// press when it is finished with, and the toggle's row is the one row on the
+// card with space going spare.
+func (c *commentField) SetTrailing(obj fyne.CanvasObject) {
+	c.trailing = obj
+	c.root.Objects[0] = container.NewBorder(nil, nil, nil, obj, c.toggle)
+	c.root.Refresh()
 }
 
 // Toggle opens or closes the field, focusing it on the way open.

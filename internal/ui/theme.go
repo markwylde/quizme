@@ -47,6 +47,13 @@ type palette struct {
 	// against a lightened page, with a margin between, reads as a stack of
 	// cards.
 	card color.Color
+
+	// settled is the panel a folded, answered question sits on: the card
+	// colour with a green cast. On a page of folded rows the tint is what
+	// carries at a glance, while the tick is what confirms it up close. It is
+	// deliberately close to card -- a saturated green would turn a finished
+	// questionnaire into a wall of colour.
+	settled color.Color
 }
 
 var lightPalette = palette{
@@ -71,6 +78,7 @@ var lightPalette = palette{
 	overlay:     hex(0xFFFFFF),
 	scrollBar:   rgba(0x1C, 0x1B, 0x19, 0x40),
 	card:        hex(0xF3F1EC),
+	settled:     hex(0xEBF3E9),
 }
 
 var darkPalette = palette{
@@ -95,6 +103,7 @@ var darkPalette = palette{
 	overlay:     hex(0x1F2124),
 	scrollBar:   rgba(0xFF, 0xFF, 0xFF, 0x40),
 	card:        hex(0x141517),
+	settled:     hex(0x141F16),
 }
 
 func (t formTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) color.Color {
@@ -197,13 +206,14 @@ func rgba(r, g, b, a uint8) color.Color {
 	return color.NRGBA{R: r, G: g, B: b, A: a}
 }
 
-// cardProvider is a theme that can colour the panel behind a question.
+// cardProvider is a theme that can colour the panels behind a question.
 //
-// The colour is looked up through this rather than as a theme colour name,
+// The colours are looked up through this rather than as theme colour names,
 // because a name the running theme has never heard of is a logged error on
-// every draw. A theme that provides no card colour simply gets none.
+// every draw. A theme that provides no card colours simply gets none.
 type cardProvider interface {
 	QuestionCard(variant fyne.ThemeVariant) color.Color
+	SettledCard(variant fyne.ThemeVariant) color.Color
 }
 
 // QuestionCard returns the background every question's card is painted in.
@@ -212,4 +222,13 @@ func (t formTheme) QuestionCard(variant fyne.ThemeVariant) color.Color {
 		return darkPalette.card
 	}
 	return lightPalette.card
+}
+
+// SettledCard returns the background for a folded question that carries an
+// answer.
+func (t formTheme) SettledCard(variant fyne.ThemeVariant) color.Color {
+	if variant == theme.VariantDark {
+		return darkPalette.settled
+	}
+	return lightPalette.settled
 }

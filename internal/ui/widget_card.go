@@ -21,6 +21,12 @@ type cardBox struct {
 
 	content fyne.CanvasObject
 	rect    *canvas.Rectangle
+
+	// settled says to paint the finished-question panel rather than the plain
+	// one. It is the card's own state, not the question's, so that the one
+	// place that knows whether a question is folded and answered is the one
+	// place that decides.
+	settled bool
 }
 
 func newCardBox(content fyne.CanvasObject) *cardBox {
@@ -34,6 +40,18 @@ func (c *cardBox) CreateRenderer() fyne.WidgetRenderer {
 	c.rect.CornerRadius = theme.Size(theme.SizeNameCardRadius)
 	return widget.NewSimpleRenderer(container.NewStack(c.rect, c.content))
 }
+
+// SetSettled chooses which panel the card paints.
+func (c *cardBox) SetSettled(settled bool) {
+	if c.settled == settled {
+		return
+	}
+	c.settled = settled
+	c.Refresh()
+}
+
+// Settled reports which panel the card is painting.
+func (c *cardBox) Settled() bool { return c.settled }
 
 // Content is what the card paints behind. A widget's children are otherwise
 // reachable only through its renderer, which makes the question inside a card
@@ -59,7 +77,10 @@ func (c *cardBox) colour() color.Color {
 	settings := app.Settings()
 	provider, ok := settings.Theme().(cardProvider)
 	if !ok {
-		return color.Transparent // a theme without a card colour simply gets none
+		return color.Transparent // a theme without card colours simply gets none
+	}
+	if c.settled {
+		return provider.SettledCard(settings.ThemeVariant())
 	}
 	return provider.QuestionCard(settings.ThemeVariant())
 }
