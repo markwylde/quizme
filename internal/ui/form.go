@@ -258,7 +258,8 @@ func (f *form) buildCard(q *questionnaire.Question) *card {
 	// The card and the gap around it do the separating a hairline rule was
 	// failing to do, so the separator goes: a card edge and a rule together
 	// only look fussy.
-	c.card = newCardBox(container.NewPadded(container.NewVBox(c.header, c.body)))
+	c.card = newCardBox(container.NewPadded(
+		container.New(&cardStack{gap: headerBodyGap}, c.header, c.body)))
 	c.header.SetHoverReporter(c.card.SetHovered)
 	c.root = container.NewPadded(c.card)
 
@@ -299,6 +300,11 @@ func alignInk(control fyne.CanvasObject, ink float32) fyne.CanvasObject {
 	}
 	return container.New(layout.NewCustomPaddedLayout(0, 0, shift, 0), control)
 }
+
+// headerBodyGap is the space between a question's prompt and the controls
+// beneath it. It is measured from the bottom of the prompt's box, which already
+// carries the inner padding, so it is smaller than it looks.
+const headerBodyGap = 0
 
 // needsDone reports whether a type's answer is composed over several actions,
 // and so cannot be folded the moment it changes: folding a field mid-word would

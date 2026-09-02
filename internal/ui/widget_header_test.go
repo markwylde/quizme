@@ -259,11 +259,14 @@ func TestTheMarksAreLevelWithThePromptsFirstLine(t *testing.T) {
 			defer w.Close()
 			w.Resize(fyne.NewSize(600, 300))
 
-			// The line the prompt's first row of text sits on, measured the way
-			// a reader sees it: the label's own inset plus half a line.
-			inset := h.prompt.MinSize().Height - oneLine()
-			if got, want := inset, 2*theme.Size(theme.SizeNameInnerPadding); name == "one line" && got != want {
-				t.Fatalf("a one-line label insets its text by %v, this assumes %v", got/2, want/2)
+			// The marks aim at the middle of the prompt's first line: the inner
+			// padding above the text, plus half a line. Worth pinning the box
+			// that assumes -- padding above, a tighter tail below.
+			if name == "one line" {
+				want := theme.Size(theme.SizeNameInnerPadding) + oneLine() + promptTail
+				if got := h.prompt.MinSize().Height; got != want {
+					t.Fatalf("a one-line prompt is %v tall, this aims at a box %v tall", got, want)
+				}
 			}
 			line := promptLineCentre()
 

@@ -17,6 +17,16 @@ import (
 // own leading sets those lines close enough to read as one crowded block.
 const promptLeading = 5
 
+// promptTail is the space under a prompt's last line, inside its own box. A
+// label pads itself equally on every side; a prompt is followed by the answer
+// it asks for, and that reads better closer than a label's own padding sets it.
+//
+// It is the one number behind both gaps a reader sees: under a folded question
+// the answer sits a tail plus the answer's own padding away, less the overlap
+// the stack takes back, and under an open one the controls sit a tail below the
+// prompt's box. Change it and both move together.
+const promptTail = 5
+
 // promptText is a question's prompt: bold, wrapping, and laid out a line at a
 // time so the leading between those lines can be set.
 //
@@ -48,7 +58,7 @@ func newPromptText(text string) *promptText {
 	p := &promptText{text: text}
 	p.ExtendBaseWidget(p)
 	p.box = container.NewWithoutLayout()
-	p.height = p.lineHeight() + 2*p.inset()
+	p.height = p.inset() + p.lineHeight() + p.tail()
 	return p
 }
 
@@ -125,8 +135,8 @@ func (p *promptText) reflow(width float32) {
 		line.Refresh()
 	}
 
-	height := 2*p.inset() + float32(len(wrapped))*p.lineHeight() +
-		float32(len(wrapped)-1)*promptLeading
+	height := p.inset() + float32(len(wrapped))*p.lineHeight() +
+		float32(len(wrapped)-1)*promptLeading + p.tail()
 	if height != p.height {
 		p.height = height
 		// The prompt is taller or shorter than whatever asked for it thought,
@@ -145,9 +155,13 @@ func (p *promptText) measure(text string) fyne.Size {
 // lineHeight is the height of one line of the prompt's own face.
 func (p *promptText) lineHeight() float32 { return p.measure("Ag").Height }
 
-// inset matches what a label puts between its text and its edge, so a prompt
-// occupies the same box the label it replaced did.
+// inset matches what a label puts between its text and its edge, above it and
+// to the left. Everything that lines itself up against a prompt measures from
+// there, so that much of the label's box is kept exactly.
 func (p *promptText) inset() float32 { return theme.Size(theme.SizeNameInnerPadding) }
+
+// tail is the space under the last line. See promptTail.
+func (p *promptText) tail() float32 { return promptTail }
 
 // wrapWords breaks text into lines that fit the given width, keeping any line
 // breaks the author wrote themselves.

@@ -58,16 +58,16 @@ func TestAPromptsLinesAreLedApart(t *testing.T) {
 
 	// And the box it asks for accounts for every line and every gap.
 	n := float32(len(lines))
-	want := 2*p.inset() + n*p.lineHeight() + (n-1)*promptLeading
+	want := p.inset() + n*p.lineHeight() + (n-1)*promptLeading + p.tail()
 	if got := p.MinSize().Height; got != want {
 		t.Errorf("the prompt asks for %v of height, want %v", got, want)
 	}
 }
 
-// The text is inset the way a label's was, so everything that lines itself up
-// against a prompt -- the chevron, the tick, the answer beneath -- keeps the
-// measurements it already had.
-func TestAPromptSitsInTheSameBoxALabelDid(t *testing.T) {
+// The text is inset the way a label's was above and to the left, which is what
+// the chevron, the tick and the answer beneath measure from. Under the last
+// line it sits closer than a label would set it: see promptTail.
+func TestAPromptIsInsetLikeALabelExceptUnderIt(t *testing.T) {
 	p := newPromptText("Call it what?")
 	p.CreateRenderer()
 	p.Resize(fyne.NewSize(400, p.MinSize().Height))
@@ -82,8 +82,13 @@ func TestAPromptSitsInTheSameBoxALabelDid(t *testing.T) {
 	if got, want := line.Position().Y, theme.Size(theme.SizeNameInnerPadding); got != want {
 		t.Errorf("the text starts at y=%v, want the inner padding %v", got, want)
 	}
-	if got, want := p.MinSize().Height, p.lineHeight()+2*theme.Size(theme.SizeNameInnerPadding); got != want {
+	inner := theme.Size(theme.SizeNameInnerPadding)
+	if got, want := p.MinSize().Height, inner+p.lineHeight()+promptTail; got != want {
 		t.Errorf("a one-line prompt is %v tall, want %v", got, want)
+	}
+	if promptTail >= inner {
+		t.Errorf("the tail is %v against the padding's %v: it is meant to be the tighter of the two",
+			float32(promptTail), inner)
 	}
 	// Which is the line the marks are placed against.
 	if got, want := promptLineCentre(), theme.Size(theme.SizeNameInnerPadding)+p.lineHeight()/2; got != want {

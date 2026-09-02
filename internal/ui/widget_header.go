@@ -86,7 +86,11 @@ func newQuestionHeader(q *questionnaire.Question, onTap func()) *questionHeader 
 	// enough to wrap -- which is most of them, on a real questionnaire -- left
 	// the answer stranded out to the right, level with a line of the question
 	// it had nothing to do with.
-	h.stack = container.New(&tightStack{gap: promptAnswerGap}, h.prompt, h.summary)
+	// The stack gives back exactly the answer's own top padding, so what stands
+	// between the prompt and the answer is the prompt's tail and nothing else --
+	// the same distance an open question leaves above its controls.
+	h.stack = container.New(
+		&tightStack{gap: theme.Size(theme.SizeNameInnerPadding)}, h.prompt, h.summary)
 
 	// The chevron and the trailing marks are placed against the prompt's first
 	// line of text, which is neither the top of the header nor the middle of
@@ -228,6 +232,10 @@ func (t *tightStack) MinSize(objects []fyne.CanvasObject) fyne.Size {
 }
 
 func (t *tightStack) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+	// Width first, for every child, before any of them is placed. The prompt
+	// wraps its own text, so it only knows how tall it is once it has a width
+	// -- and everything below it is placed from that height. Positioning as we
+	// went put the answer where a stale height said the prompt ended.
 	y := float32(0)
 	first := true
 	for _, o := range objects {
@@ -279,6 +287,10 @@ func (l *headerLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	if width < 0 {
 		width = 0
 	}
+	// Twice, deliberately. The first gives the prompt its width, which is what
+	// tells it how many lines it takes and so how tall the stack really is; the
+	// second sizes the stack to that. Skipping the second leaves the card as
+	// tall as whatever the stack last thought it was.
 	stack.Resize(fyne.NewSize(width, stack.MinSize().Height))
 	stack.Move(fyne.NewPos(promptInset(), 0))
 
@@ -297,11 +309,6 @@ func (l *headerLayout) parts(objects []fyne.CanvasObject) (chevron, stack, trail
 	}
 	return objects[0], objects[1], objects[2], true
 }
-
-// promptAnswerGap is the space between a collapsed question's prompt and the
-// answer beneath it: a little more than the leading inside the prompt itself,
-// so the two read as prompt and response rather than one wrapped sentence.
-const promptAnswerGap = 8
 
 // promptInset is where a question's prompt starts: past the column the fold
 // chevron sits in. Everything else the question shows lines up with it, so this
@@ -362,6 +369,67 @@ func (c *promptColumn) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	}
 }
 
+// cardStack stacks a question's header and its body, gap apart.
+//
+// A box layout cannot: it positions each child as it goes, from a minimum size
+// the child does not know yet. The header wraps its prompt, so its height is
+// only settled once it has a width, and a box layout that had already placed
+// the body left the card as tall as whatever the header last thought it was.
+type cardStack struct {
+	gap float32
+}
+
+func (c *cardStack) MinSize(objects []fyne.CanvasObject) fyne.Size {
+	var size fyne.Size
+	first := true
+	for _, o := range objects {
+		if !o.Visible() {
+			continue
+		}
+		min := o.MinSize()
+		if min.Width > size.Width {
+			size.Width = min.Width
+		}
+		if !first {
+			size.Height += c.gap
+		}
+		size.Height += min.Height
+		first = false
+	}
+	return size
+}
+
+func (c *cardStack) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+	// Every child gets its width before any of them is placed, and then again
+	// as it is placed. Both passes matter: the header wraps its prompt, so it
+	// only settles its height once it has a width. The first pass gets it
+	// there; the second places everything from the height that settling
+	// produced. Without it a question whose prompt wrapped was laid out from
+	// the height its prompt had before it knew how wide it was -- which left
+	// the answer adrift and the card half as tall again as it needed.
+	for _, o := range objects {
+		if o.Visible() {
+			o.Resize(fyne.NewSize(size.Width, o.MinSize().Height))
+		}
+	}
+
+	y := float32(0)
+	first := true
+	for _, o := range objects {
+		if !o.Visible() {
+			continue
+		}
+		if !first {
+			y += c.gap
+		}
+		height := o.MinSize().Height
+		o.Resize(fyne.NewSize(size.Width, height))
+		o.Move(fyne.NewPos(0, y))
+		y += height
+		first = false
+	}
+}
+
 // centredRow lays a handful of marks out in a line, each centred on the row's
 // own middle. A box layout would hang them all from the top, which puts a
 // 15-pixel tick and a label with padding of its own on different centrelines.
@@ -417,4 +485,5 @@ var (
 	_ fyne.Layout        = (*headerLayout)(nil)
 	_ fyne.Layout        = (*centredRow)(nil)
 	_ fyne.Layout        = (*promptColumn)(nil)
+	_ fyne.Layout        = (*cardStack)(nil)
 )

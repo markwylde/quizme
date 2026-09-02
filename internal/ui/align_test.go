@@ -217,3 +217,189 @@ func searchIn[T fyne.CanvasObject](root fyne.CanvasObject) (fyne.CanvasObject, b
 	}
 	return found, true
 }
+
+// inkSpan is the top and bottom of everything drawn under obj, in the
+// coordinates of obj's own parent.
+func inkSpan(obj fyne.CanvasObject) (top, bottom float32, ok bool) {
+	var walk func(o fyne.CanvasObject, offset float32)
+	walk = func(o fyne.CanvasObject, offset float32) {
+		if o == nil || !o.Visible() {
+			return
+		}
+		at := offset + o.Position().Y
+		if ink, leaf := isInk(o); leaf {
+			if !ink {
+				return
+			}
+			if !ok || at < top {
+				top = at
+			}
+			if end := at + o.Size().Height; !ok || end > bottom {
+				bottom = end
+			}
+			ok = true
+			return
+		}
+		switch p := o.(type) {
+		case *fyne.Container:
+			for _, child := range p.Objects {
+				walk(child, at)
+			}
+		case fyne.Widget:
+			for _, child := range test.WidgetRenderer(p).Objects() {
+				walk(child, at)
+			}
+		}
+	}
+	walk(obj, 0)
+	return top, bottom, ok
+}
+
+// inkSpanOf finds target under root and reports the span of ink it draws, in
+// root's own coordinates.
+func inkSpanOf(root, target fyne.CanvasObject) (top, bottom float32, ok bool) {
+	var walk func(o fyne.CanvasObject, offset float32) bool
+	walk = func(o fyne.CanvasObject, offset float32) bool {
+		if o == nil {
+			return false
+		}
+		at := offset + o.Position().Y
+		if o == target {
+			t, b, found := inkSpan(o)
+			top, bottom, ok = at-o.Position().Y+t, at-o.Position().Y+b, found
+			return true
+		}
+		switch p := o.(type) {
+		case *fyne.Container:
+			for _, child := range p.Objects {
+				if walk(child, at) {
+					return true
+				}
+			}
+		case fyne.Widget:
+			for _, child := range test.WidgetRenderer(p).Objects() {
+				if walk(child, at) {
+					return true
+				}
+			}
+		}
+		return false
+	}
+	walk(root, 0)
+	return top, bottom, ok
+}
+
+// A question's prompt sits the same distance from whatever follows it, folded
+// or open. It did not: a wrapped prompt settles its height only after being
+// given a width, and the layouts around it were placing the answer from a
+// height measured before that -- so a prompt that wrapped left a gap several
+// times the one a prompt that fitted on a line did.
+func TestThePromptSitsTheSameDistanceFromWhatFollows(t *testing.T) {
+	restore := useTheme(t, newTheme())
+	defer restore()
+
+	f, doc := build(t, alignmentDoc)
+	win := test.NewWindow(f.build())
+	defer win.Close()
+	win.Resize(fyne.NewSize(780, 2400))
+
+	for _, q := range doc.Questions {
+		c := f.cards[q.ID]
+
+		_, promptEnds, ok := inkSpanOf(c.root, c.header.prompt)
+		if !ok {
+			t.Fatalf("%s: the prompt drew nothing", q.ID)
+		}
+		control, ok := answerControl(t, f, q)
+		if !ok {
+			t.Fatalf("%s (%s): no control found", q.ID, q.Type)
+		}
+		controlStarts, _, ok := inkSpanOf(c.root, control)
+		if !ok {
+			t.Fatalf("%s (%s): the control drew nothing", q.ID, q.Type)
+		}
+
+		if gap := controlStarts - promptEnds; gap < promptTail-1 || gap > promptTail+1 {
+			t.Errorf("%s (%s): %v between the prompt and its control, want %v",
+				q.ID, q.Type, gap, float32(promptTail))
+		}
+	}
+}
+
+// And the same distance again once it is folded, this time to the answer -- the
+// case that a prompt of one line and a prompt of three both have to get right.
+func TestTheAnswerSitsTheSameDistanceUnderAnyPrompt(t *testing.T) {
+	restore := useTheme(t, newTheme())
+	defer restore()
+
+	f, _ := build(t, `
+title: t
+questions:
+  - id: short
+    type: select
+    prompt: Short prompt?
+    options: [a, b]
+    answer: a
+  - id: wrapped
+    type: select
+    prompt: A shop displays a jacket in its window marked "40". A customer takes it to the till and offers 40. The shop refuses to sell. In contract law, what is the display?
+    options: [a, b]
+    answer: a
+`)
+	win := test.NewWindow(f.build())
+	defer win.Close()
+	win.Resize(fyne.NewSize(780, 700))
+
+	for _, id := range []string{"short", "wrapped"} {
+		c := f.cards[id]
+		if !c.collapsed() {
+			t.Fatalf("%s: expected an answered question to open folded", id)
+		}
+
+		_, promptEnds, ok := inkSpanOf(c.root, c.header.prompt)
+		if !ok {
+			t.Fatalf("%s: the prompt drew nothing", id)
+		}
+		answerStarts, _, ok := inkSpanOf(c.root, c.header.summary)
+		if !ok {
+			t.Fatalf("%s: the answer drew nothing", id)
+		}
+
+		if gap := answerStarts - promptEnds; gap < promptTail-1 || gap > promptTail+1 {
+			t.Errorf("%s: %v between the prompt and its answer, want %v",
+				id, gap, float32(promptTail))
+		}
+	}
+
+	// The wrapped prompt is the one that used to be wrong, so say out loud that
+	// it really did wrap.
+	if got := len(f.cards["wrapped"].header.prompt.Lines()); got < 2 {
+		t.Errorf("the wrapped prompt came to %d lines: this test proves nothing", got)
+	}
+}
+
+// A folded card is as tall as what it draws, not as tall as the header once
+// thought it was.
+func TestAFoldedCardIsNoTallerThanItsHeader(t *testing.T) {
+	restore := useTheme(t, newTheme())
+	defer restore()
+
+	f, _ := build(t, `
+title: t
+questions:
+  - id: wrapped
+    type: select
+    prompt: A shop displays a jacket in its window marked "40". A customer takes it to the till and offers 40. The shop refuses to sell. In contract law, what is the display?
+    options: [a, b]
+    answer: a
+`)
+	win := test.NewWindow(f.build())
+	defer win.Close()
+	win.Resize(fyne.NewSize(780, 700))
+
+	c := f.cards["wrapped"]
+	if got, want := c.header.Size().Height, c.header.MinSize().Height; got > want+1 {
+		t.Errorf("the header is %v tall against a minimum of %v: it was sized from a stale measurement",
+			got, want)
+	}
+}
