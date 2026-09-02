@@ -247,10 +247,9 @@ func (l *headerLayout) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	if !ok {
 		return fyne.Size{}
 	}
-	pad := theme.Size(theme.SizeNamePadding)
 	c, s, t := chevron.MinSize(), stack.MinSize(), trailing.MinSize()
 	return fyne.NewSize(
-		c.Width+pad+s.Width+pad+t.Width,
+		promptInset()+s.Width+theme.Size(theme.SizeNamePadding)+t.Width,
 		fyne.Max(s.Height, fyne.Max(c.Height, t.Height)),
 	)
 }
@@ -263,16 +262,18 @@ func (l *headerLayout) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 	pad := theme.Size(theme.SizeNamePadding)
 	c, t := chevron.MinSize(), trailing.MinSize()
 
-	width := size.Width - c.Width - t.Width - 2*pad
+	width := size.Width - promptInset() - t.Width - pad
 	if width < 0 {
 		width = 0
 	}
 	stack.Resize(fyne.NewSize(width, stack.MinSize().Height))
-	stack.Move(fyne.NewPos(c.Width+pad, 0))
+	stack.Move(fyne.NewPos(promptInset(), 0))
 
 	line := promptLineCentre()
 	chevron.Resize(c)
-	chevron.Move(fyne.NewPos(0, line-c.Height/2))
+	// Centred in the column rather than jammed against its left edge, so a
+	// chevron narrower than an inline icon still looks deliberate.
+	chevron.Move(fyne.NewPos((promptInset()-pad-c.Width)/2, line-c.Height/2))
 	trailing.Resize(t)
 	trailing.Move(fyne.NewPos(size.Width-t.Width, line-t.Height/2))
 }
@@ -284,6 +285,13 @@ func (l *headerLayout) parts(objects []fyne.CanvasObject) (chevron, stack, trail
 	return objects[0], objects[1], objects[2], true
 }
 
+// promptInset is where a question's prompt starts: past the column the fold
+// chevron sits in. Everything else the question shows lines up with it, so this
+// is the one place that decides how far in that is.
+func promptInset() float32 {
+	return theme.Size(theme.SizeNameInlineIcon) + theme.Size(theme.SizeNamePadding)
+}
+
 // promptLineCentre is the middle of a prompt's first line of text, measured from
 // the top of the header.
 func promptLineCentre() float32 {
@@ -291,6 +299,49 @@ func promptLineCentre() float32 {
 	// whatever the prompt happens to say.
 	line := fyne.MeasureText("Ag", theme.Size(theme.SizeNameText), fyne.TextStyle{Bold: true}).Height
 	return theme.Size(theme.SizeNameInnerPadding) + line/2
+}
+
+// promptColumn indents whatever it holds to the prompt's own column.
+//
+// A question's controls used to start at the card's edge, a chevron's width to
+// the left of the prompt they answer, so nothing on the card shared a left
+// edge. The space this leaves under the chevron is the price of that alignment,
+// and a cheap one.
+type promptColumn struct{}
+
+func (c *promptColumn) MinSize(objects []fyne.CanvasObject) fyne.Size {
+	var size fyne.Size
+	for _, o := range objects {
+		if !o.Visible() {
+			continue
+		}
+		min := o.MinSize()
+		if min.Width > size.Width {
+			size.Width = min.Width
+		}
+		size.Height += min.Height
+	}
+	if size.Height == 0 {
+		return size // nothing showing: take up no room at all
+	}
+	return fyne.NewSize(size.Width+promptInset(), size.Height)
+}
+
+func (c *promptColumn) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+	width := size.Width - promptInset()
+	if width < 0 {
+		width = 0
+	}
+	y := float32(0)
+	for _, o := range objects {
+		if !o.Visible() {
+			continue
+		}
+		height := o.MinSize().Height
+		o.Resize(fyne.NewSize(width, height))
+		o.Move(fyne.NewPos(promptInset(), y))
+		y += height
+	}
 }
 
 // centredRow lays a handful of marks out in a line, each centred on the row's
@@ -347,4 +398,5 @@ var (
 	_ fyne.Layout        = (*tightStack)(nil)
 	_ fyne.Layout        = (*headerLayout)(nil)
 	_ fyne.Layout        = (*centredRow)(nil)
+	_ fyne.Layout        = (*promptColumn)(nil)
 )

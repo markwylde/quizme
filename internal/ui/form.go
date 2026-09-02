@@ -231,7 +231,9 @@ func (f *form) buildCard(q *questionnaire.Question) *card {
 	c.warning.Hide()
 	parts = append(parts, c.warning)
 
-	c.body = container.NewVBox(parts...)
+	// Indented to the prompt's column: the controls answer the prompt, so they
+	// line up with it rather than with the card's edge.
+	c.body = container.New(&promptColumn{}, container.NewVBox(parts...))
 
 	// The card and the gap around it do the separating a hairline rule was
 	// failing to do, so the separator goes: a card edge and a rule together

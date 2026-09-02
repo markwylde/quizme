@@ -51,6 +51,55 @@ questions:
 	}
 }
 
+// Everything a question shows shares the prompt's left edge. The controls
+// answer the prompt, and starting them a chevron's width to its left meant
+// nothing on the card lined up with anything else.
+func TestTheBodyLinesUpWithThePrompt(t *testing.T) {
+	f, _ := build(t, uiDoc)
+	c := f.cards["storage"]
+
+	w := test.NewWindow(f.build())
+	defer w.Close()
+	w.Resize(fyne.NewSize(780, 900))
+
+	inner := c.body.Objects[0]
+	if got, want := inner.Position().X, promptInset(); got != want {
+		t.Errorf("the body starts at x=%v, want the prompt's column at x=%v", got, want)
+	}
+	if got, want := c.header.stack.Position().X, promptInset(); got != want {
+		t.Errorf("the prompt starts at x=%v, want x=%v", got, want)
+	}
+	// Which is the point: one left edge, not two.
+	if inner.Position().X != c.header.stack.Position().X {
+		t.Errorf("the body is at x=%v and the prompt at x=%v",
+			inner.Position().X, c.header.stack.Position().X)
+	}
+	// And the chevron sits in the space that leaves.
+	if got := c.header.chevron.Position().X; got < 0 || got >= promptInset() {
+		t.Errorf("the chevron is at x=%v, want it inside the %v column", got, promptInset())
+	}
+}
+
+// The indent must not become a gap of its own when there is nothing to indent,
+// or a folded question would leave a band of empty card behind.
+func TestThePromptColumnTakesNoRoomForNothing(t *testing.T) {
+	shown := widget.NewLabel("something")
+	hidden := widget.NewLabel("nothing")
+	hidden.Hide()
+	column := &promptColumn{}
+
+	if got := column.MinSize([]fyne.CanvasObject{hidden}); got != (fyne.Size{}) {
+		t.Errorf("MinSize = %v with nothing showing, want no size at all", got)
+	}
+	got := column.MinSize([]fyne.CanvasObject{shown})
+	if got.Height != shown.MinSize().Height {
+		t.Errorf("height = %v, want the %v its content asks for", got.Height, shown.MinSize().Height)
+	}
+	if want := shown.MinSize().Width + promptInset(); got.Width != want {
+		t.Errorf("width = %v, want %v: the content plus the column it is indented past", got.Width, want)
+	}
+}
+
 // --- Folding -------------------------------------------------------------
 
 func TestFoldingHidesTheBodyButKeepsIt(t *testing.T) {
