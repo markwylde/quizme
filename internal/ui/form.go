@@ -9,6 +9,7 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
@@ -273,6 +274,32 @@ func (f *form) buildCard(q *questionnaire.Question) *card {
 	return c
 }
 
+// How far into itself each kind of control draws, measured from its own left
+// edge, in the toolkit as it stands. Fyne's widgets disagree: a radio group
+// sets its buttons in a little way, an entry draws its border at the very
+// edge, a button fills its whole box, and text inside a label starts at the
+// inner padding.
+//
+// A card lines up when every one of them draws at the same place as the
+// prompt's text, so the form makes up the difference. The numbers are the
+// toolkit's, not ours -- TestEveryControlLinesUpWithThePromptsText measures
+// them, and will say so if a new Fyne version moves one.
+const (
+	choiceInk = 5   // a radio or check group's button
+	entryInk  = 0.5 // an entry's border stroke
+	buttonInk = 0   // a button's filled background
+)
+
+// alignInk sets a control in far enough that it draws where the prompt's text
+// does, given how far into itself it already draws.
+func alignInk(control fyne.CanvasObject, ink float32) fyne.CanvasObject {
+	shift := theme.Size(theme.SizeNameInnerPadding) - ink
+	if shift <= 0 {
+		return control
+	}
+	return container.New(layout.NewCustomPaddedLayout(0, 0, shift, 0), control)
+}
+
 // needsDone reports whether a type's answer is composed over several actions,
 // and so cannot be folded the moment it changes: folding a field mid-word would
 // take it away from the responder still writing in it.
@@ -318,7 +345,7 @@ func (f *form) selectControl(q *questionnaire.Question) fyne.CanvasObject {
 		if current != "" {
 			sel.SetSelected(current)
 		}
-		return sel
+		return alignInk(sel, buttonInk)
 	}
 
 	group := widget.NewRadioGroup(q.Options, func(v string) { f.set(q, v); f.settle(q) })
@@ -326,7 +353,7 @@ func (f *form) selectControl(q *questionnaire.Question) fyne.CanvasObject {
 	if current != "" {
 		group.SetSelected(current)
 	}
-	return group
+	return alignInk(group, choiceInk)
 }
 
 func (f *form) multiselectControl(q *questionnaire.Question) fyne.CanvasObject {
@@ -334,7 +361,7 @@ func (f *form) multiselectControl(q *questionnaire.Question) fyne.CanvasObject {
 	if current, ok := q.Answer.([]string); ok {
 		group.SetSelected(current)
 	}
-	return group
+	return alignInk(group, choiceInk)
 }
 
 func (f *form) textControl(q *questionnaire.Question) fyne.CanvasObject {
@@ -361,9 +388,10 @@ func (f *form) textareaControl(q *questionnaire.Question) fyne.CanvasObject {
 }
 
 // scrollable shields a text field so that scrolling the page over it keeps
-// working. See scrollThrough for why this is needed.
+// working, and sets it in far enough to line up with the prompt. See
+// scrollThrough for the shielding, and alignInk for the alignment.
 func (f *form) scrollable(field fyne.CanvasObject) fyne.CanvasObject {
-	return newScrollThrough(field, f.scrollPage)
+	return alignInk(newScrollThrough(field, f.scrollPage), entryInk)
 }
 
 // scrollPage moves the questionnaire under the responder, matching what the
@@ -447,7 +475,7 @@ func (f *form) booleanControl(q *questionnaire.Question) fyne.CanvasObject {
 			group.SetSelected("No")
 		}
 	}
-	return group
+	return alignInk(group, choiceInk)
 }
 
 func (f *form) scaleControl(q *questionnaire.Question) fyne.CanvasObject {
@@ -459,14 +487,14 @@ func (f *form) scaleControl(q *questionnaire.Question) fyne.CanvasObject {
 
 	// The buttons carry their own numbers, so no separate range labels: they
 	// only pushed the two ends of the scale apart with empty space.
-	return newScaleWidget(lo, hi, current, func(v *int) {
+	return alignInk(newScaleWidget(lo, hi, current, func(v *int) {
 		if v == nil {
 			f.set(q, nil)
 			return
 		}
 		f.set(q, *v)
 		f.settle(q)
-	})
+	}), buttonInk)
 }
 
 func (f *form) rankControl(q *questionnaire.Question, c *card) fyne.CanvasObject {

@@ -7,6 +7,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/test"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
 	"github.com/markwylde/interrogate/internal/questionnaire"
@@ -520,12 +521,20 @@ func asserted[T any](v any) bool {
 
 // A single-line field has far less slack than a four-row textarea, so the
 // shield must not add so much as a pixel to the height the field asks for.
-func TestShieldingDoesNotChangeAFieldsSize(t *testing.T) {
+// Width it does add: an entry draws its border at its own edge, so it is set in
+// to line up with the prompt.
+func TestShieldingDoesNotChangeAFieldsHeight(t *testing.T) {
 	f, _ := build(t, uiDoc)
+	inset := theme.Size(theme.SizeNameInnerPadding) - entryInk
 	for _, id := range []string{"name", "budget", "why"} {
 		entry := find[*widget.Entry](t, f, id)
-		if got, want := f.cards[id].control.MinSize(), entry.MinSize(); got != want {
-			t.Errorf("the shielded %s control asks for %v, the field itself for %v", id, got, want)
+		control := f.cards[id].control.MinSize()
+		if got, want := control.Height, entry.MinSize().Height; got != want {
+			t.Errorf("the shielded %s control is %v tall, the field itself %v", id, got, want)
+		}
+		if got, want := control.Width, entry.MinSize().Width+inset; got != want {
+			t.Errorf("the shielded %s control is %v wide, want the field's %v plus the %v it is set in",
+				id, got, entry.MinSize().Width, inset)
 		}
 	}
 }
