@@ -258,7 +258,7 @@ func (f *form) buildCard(q *questionnaire.Question) *card {
 	// The card and the gap around it do the separating a hairline rule was
 	// failing to do, so the separator goes: a card edge and a rule together
 	// only look fussy.
-	c.card = newCardBox(container.NewPadded(
+	c.card = newCardBox(container.New(cardPadding(),
 		container.New(&cardStack{gap: headerBodyGap}, c.header, c.body)))
 	c.header.SetHoverReporter(c.card.SetHovered)
 	c.root = container.NewPadded(c.card)
@@ -299,6 +299,22 @@ func alignInk(control fyne.CanvasObject, ink float32) fyne.CanvasObject {
 		return control
 	}
 	return container.New(layout.NewCustomPaddedLayout(0, 0, shift, 0), control)
+}
+
+// cardOpticalTail is the extra space under a card's last line.
+//
+// Even padding measured from the text's box does not look even. A line box
+// carries the room a capital needs above the letters and the room a descender
+// needs below, and the eye reads the space to the capitals at the top against
+// the space from the baseline at the bottom -- so a card padded equally reads
+// as tight underneath. This is the difference, and it is why the bottom padding
+// is deliberately not the same number as the top.
+const cardOpticalTail = 2
+
+// cardPadding is the space between a card's edge and the question inside it.
+func cardPadding() fyne.Layout {
+	pad := theme.Size(theme.SizeNamePadding)
+	return layout.NewCustomPaddedLayout(pad, pad+cardOpticalTail, pad, pad)
 }
 
 // headerBodyGap is the space between a question's prompt and the controls
