@@ -69,6 +69,7 @@ type form struct {
 type card struct {
 	question *questionnaire.Question
 	root     *fyne.Container
+	control  fyne.CanvasObject
 	warning  *widget.Label
 	rank     *rankWidget
 	comment  *commentField
@@ -180,7 +181,8 @@ func (f *form) buildCard(q *questionnaire.Question) *card {
 		parts = append(parts, body)
 	}
 
-	parts = append(parts, f.control(q, c))
+	c.control = f.control(q, c)
+	parts = append(parts, c.control)
 
 	c.comment = newCommentField(q.Comment, func(s string) { q.Comment = s }, f.scrollable)
 	parts = append(parts, c.comment.root)
@@ -256,7 +258,7 @@ func (f *form) textControl(q *questionnaire.Question) fyne.CanvasObject {
 		entry.SetText(current)
 	}
 	entry.OnChanged = func(s string) { f.set(q, s) }
-	return entry
+	return f.scrollable(entry)
 }
 
 func (f *form) textareaControl(q *questionnaire.Question) fyne.CanvasObject {
@@ -270,8 +272,8 @@ func (f *form) textareaControl(q *questionnaire.Question) fyne.CanvasObject {
 	return f.scrollable(entry)
 }
 
-// scrollable shields a multi-line field so that scrolling the page over it
-// keeps working. See scrollThrough for why this is needed.
+// scrollable shields a text field so that scrolling the page over it keeps
+// working. See scrollThrough for why this is needed.
 func (f *form) scrollable(field fyne.CanvasObject) fyne.CanvasObject {
 	return newScrollThrough(field, f.scrollPage)
 }
@@ -331,7 +333,7 @@ func (f *form) numberControl(q *questionnaire.Question) fyne.CanvasObject {
 		}
 		f.set(q, v)
 	}
-	return entry
+	return f.scrollable(entry)
 }
 
 func (f *form) booleanControl(q *questionnaire.Question) fyne.CanvasObject {

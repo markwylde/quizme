@@ -8,11 +8,12 @@ import (
 
 // scrollThrough makes a text field stop swallowing the page's scrolling.
 //
-// Fyne gives every wrapping multi-line Entry an internal scroller, and
-// Scroll.Scrolled consumes the event whether or not it had anywhere to scroll.
-// Events do not bubble, and the driver dispatches to the deepest object under
-// the cursor implementing the interface -- so a trackpad scroll that crosses a
-// comment box simply stops until the pointer leaves it.
+// Fyne gives every Entry an internal scroller, not only the multi-line ones: a
+// single-line field truncates and scrolls its content sideways, so its scroller
+// is live too. Scroll.Scrolled consumes the event whether or not it had
+// anywhere to scroll. Events do not bubble, and the driver dispatches to the
+// deepest object under the cursor implementing the interface -- so a trackpad
+// scroll that crosses any text field simply stops until the pointer leaves it.
 //
 // The fix is to be deeper still: a transparent layer over the field that
 // implements Scrollable and forwards to the page. Every other kind of event is

@@ -1,0 +1,85 @@
+# Mostly short answers, and long enough to need scrolling: the shape of form
+# where the pointer cannot avoid resting on a field.
+title: Scrolling review — single-line fields
+intro: |
+  Every question below takes a single-line answer or a number, and the page
+  is longer than the window. Put the pointer over the middle of the page,
+  where the fields are, and scroll from the top to the bottom in one go.
+
+  If the page moves the whole way without you steering around the boxes,
+  the fix works.
+
+status: submitted
+submitted_at: "2026-09-02T09:39:14+01:00"
+questions:
+  - id: gesture
+    type: select
+    prompt: Did one continuous scroll carry you down the whole page?
+    required: true
+    options:
+      - Yes, all the way
+      - It stopped over a field
+      - It stopped somewhere else
+    answer: Yes, all the way
+
+  - id: stuck_where
+    type: text
+    prompt: If it stopped, which field was under the pointer?
+    show_if: {gesture: It stopped over a field}
+
+  - id: name
+    type: text
+    prompt: What should we call this build?
+    answer: test
+
+  - id: machine
+    type: text
+    prompt: Which machine are you testing on?
+
+  - id: days
+    type: number
+    prompt: How many days since you last hit this bug?
+    min: 0
+    max: 365
+
+  - id: attempts
+    type: number
+    prompt: How many times did you have to move the pointer aside?
+    min: 0
+    max: 50
+
+  - id: reference
+    type: text
+    prompt: A reference for this run, if you kept one
+
+  - id: typing
+    type: select
+    prompt: Do the fields still take typing, clicks and selection as before?
+    required: true
+    options:
+      - Yes, unchanged
+      - Something is off
+    answer: Yes, unchanged
+
+  - id: typing_detail
+    type: text
+    prompt: What is off about them?
+    show_if: {typing: Something is off}
+
+  - id: bounds
+    type: number
+    prompt: Type 400 into this bounded field — is the bound still shown?
+    min: 1
+    max: 30
+
+  - id: height
+    type: select
+    prompt: Do the single-line boxes look the same height as before?
+    options:
+      - Yes
+      - They look taller
+      - They look shorter
+
+  - id: anything_else
+    type: textarea
+    prompt: Anything else worth saying?

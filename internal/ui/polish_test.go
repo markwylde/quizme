@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/test"
 	"fyne.io/fyne/v2/widget"
 
 	"github.com/markwylde/interrogate/internal/questionnaire"
@@ -307,54 +309,76 @@ func TestProgressBarClampsOutOfRange(t *testing.T) {
 
 // --- Scrolling over a text field ----------------------------------------
 
+// scrollable lists the question types whose control is a text field, and so
+// carries an internal scroller of Fyne's that would otherwise eat the gesture.
+var scrollableFields = map[string]questionnaire.Type{
+	"why":    questionnaire.TypeTextarea,
+	"name":   questionnaire.TypeText,
+	"budget": questionnaire.TypeNumber,
+}
+
 func TestScrollOverATextFieldMovesThePage(t *testing.T) {
 	// Fyne's Entry has an internal scroller that consumes scroll events even
 	// with nothing to scroll, and events do not bubble. Without the shield, a
-	// trackpad scroll stops dead when it crosses a comment box.
-	f, _ := build(t, uiDoc)
-	f.scroll.Resize(fyne.NewSize(600, 400))
-	f.list.Resize(fyne.NewSize(600, 2000))
-	f.scroll.Content.Resize(fyne.NewSize(600, 2000))
+	// trackpad scroll stops dead when it crosses a text field -- of any kind,
+	// since a single-line entry scrolls its content sideways and so has a live
+	// scroller too.
+	for id := range scrollableFields {
+		t.Run(id, func(t *testing.T) {
+			f, _ := build(t, uiDoc)
+			f.scroll.Resize(fyne.NewSize(600, 400))
+			f.list.Resize(fyne.NewSize(600, 2000))
+			f.scroll.Content.Resize(fyne.NewSize(600, 2000))
 
-	shield := findShield(t, f, "why")
-	before := f.scroll.Offset.Y
-	shield.Scrolled(&fyne.ScrollEvent{Scrolled: fyne.NewDelta(0, -40)})
+			shield := findShield(t, f, id)
+			before := f.scroll.Offset.Y
+			shield.Scrolled(&fyne.ScrollEvent{Scrolled: fyne.NewDelta(0, -40)})
 
-	if f.scroll.Offset.Y == before {
-		t.Error("scrolling over a text field did not move the page")
+			if f.scroll.Offset.Y == before {
+				t.Error("scrolling over a text field did not move the page")
+			}
+		})
 	}
 }
 
 func TestScrollOverATextFieldStopsAtTheEnds(t *testing.T) {
-	f, _ := build(t, uiDoc)
-	f.scroll.Resize(fyne.NewSize(600, 400))
-	f.scroll.Content.Resize(fyne.NewSize(600, 2000))
-	shield := findShield(t, f, "why")
+	for id := range scrollableFields {
+		t.Run(id, func(t *testing.T) {
+			f, _ := build(t, uiDoc)
+			f.scroll.Resize(fyne.NewSize(600, 400))
+			f.scroll.Content.Resize(fyne.NewSize(600, 2000))
+			shield := findShield(t, f, id)
 
-	// Scrolling up at the top must not run past the start of the page.
-	shield.Scrolled(&fyne.ScrollEvent{Scrolled: fyne.NewDelta(0, 500)})
-	if got := f.scroll.Offset.Y; got != 0 {
-		t.Errorf("offset = %v after scrolling up at the top, want 0", got)
-	}
+			// Scrolling up at the top must not run past the start of the page.
+			shield.Scrolled(&fyne.ScrollEvent{Scrolled: fyne.NewDelta(0, 500)})
+			if got := f.scroll.Offset.Y; got != 0 {
+				t.Errorf("offset = %v after scrolling up at the top, want 0", got)
+			}
 
-	// Nor past the end.
-	shield.Scrolled(&fyne.ScrollEvent{Scrolled: fyne.NewDelta(0, -99999)})
-	if got := f.scroll.Offset.Y; got > 1600 {
-		t.Errorf("offset = %v, want it capped at the end of the page", got)
+			// Nor past the end.
+			shield.Scrolled(&fyne.ScrollEvent{Scrolled: fyne.NewDelta(0, -99999)})
+			if got := f.scroll.Offset.Y; got > 1600 {
+				t.Errorf("offset = %v, want it capped at the end of the page", got)
+			}
+		})
 	}
 }
 
 func TestScrollOverATextFieldIgnoresSideways(t *testing.T) {
-	f, _ := build(t, uiDoc)
-	f.scroll.Resize(fyne.NewSize(600, 400))
-	f.scroll.Content.Resize(fyne.NewSize(600, 2000))
-	findShield(t, f, "why").Scrolled(&fyne.ScrollEvent{Scrolled: fyne.NewDelta(120, 0)})
-	if got := f.scroll.Offset.X; got != 0 {
-		t.Errorf("offset.X = %v, want the page never to scroll sideways", got)
+	for id := range scrollableFields {
+		t.Run(id, func(t *testing.T) {
+			f, _ := build(t, uiDoc)
+			f.scroll.Resize(fyne.NewSize(600, 400))
+			f.scroll.Content.Resize(fyne.NewSize(600, 2000))
+			findShield(t, f, id).Scrolled(&fyne.ScrollEvent{Scrolled: fyne.NewDelta(120, 0)})
+			if got := f.scroll.Offset.X; got != 0 {
+				t.Errorf("offset.X = %v, want the page never to scroll sideways", got)
+			}
+		})
 	}
 }
 
-func TestEveryMultiLineFieldIsShielded(t *testing.T) {
+func TestEveryTextFieldIsShielded(t *testing.T) {
 	f, doc := build(t, uiDoc)
 	for _, q := range doc.Questions {
 		c := f.cards[q.ID]
@@ -362,23 +386,146 @@ func TestEveryMultiLineFieldIsShielded(t *testing.T) {
 		if _, ok := search[*scrollShield](c.comment.shielded(), first[*scrollShield]()); !ok {
 			t.Errorf("the comment field for %q is not shielded", q.ID)
 		}
-		if q.Type == questionnaire.TypeTextarea {
-			if _, ok := search[*scrollShield](c.root, first[*scrollShield]()); !ok {
-				t.Errorf("the textarea for %q is not shielded", q.ID)
-			}
+		// The control itself, rather than the whole card: the comment box's
+		// own shield would otherwise answer for a control that has none.
+		if !rendersATextField(q.Type) {
+			continue
+		}
+		if _, ok := search[*scrollShield](c.control, first[*scrollShield]()); !ok {
+			t.Errorf("the %s control for %q is not shielded", q.Type, q.ID)
 		}
 	}
 }
 
+// TestEveryTextFieldIsShielded only sees the types uiDoc happens to use, so
+// this keeps the fixture honest: a text-field type it never asks for would go
+// unchecked.
+func TestTheFixtureCoversEveryTextField(t *testing.T) {
+	_, doc := build(t, uiDoc)
+	for _, want := range []questionnaire.Type{
+		questionnaire.TypeText, questionnaire.TypeTextarea, questionnaire.TypeNumber,
+	} {
+		found := false
+		for _, q := range doc.Questions {
+			if q.Type == want {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("uiDoc has no %s question, so the shielding test never checks one", want)
+		}
+	}
+}
+
+func rendersATextField(t questionnaire.Type) bool {
+	switch t {
+	case questionnaire.TypeText, questionnaire.TypeTextarea, questionnaire.TypeNumber:
+		return true
+	}
+	return false
+}
+
+// findShield returns the shield over a question's own control, not whichever
+// one the card happens to hold first.
 func findShield(t *testing.T, f *form, id string) *scrollShield {
 	t.Helper()
 	c, ok := f.cards[id]
 	if !ok {
 		t.Fatalf("no card for %q", id)
 	}
-	found, ok := search[*scrollShield](c.root, first[*scrollShield]())
+	found, ok := search[*scrollShield](c.control, first[*scrollShield]())
 	if !ok {
-		t.Fatalf("no scroll shield in the card for %q", id)
+		t.Fatalf("no scroll shield on the control for %q", id)
 	}
 	return found
+}
+
+// --- A shielded field is still a field -----------------------------------
+
+func TestShieldedTextFieldStillAnswersAndCounts(t *testing.T) {
+	f, doc := build(t, uiDoc)
+	answered, before := f.counts()
+
+	entry := find[*widget.Entry](t, f, "name")
+	entry.SetText("interrogate")
+
+	if got := doc.Question("name").Answer; got != "interrogate" {
+		t.Errorf("answer = %#v, want %q", got, "interrogate")
+	}
+	nowAnswered, total := f.counts()
+	if nowAnswered != answered+1 {
+		t.Errorf("answered = %d, want %d: a shielded field should count toward progress", nowAnswered, answered+1)
+	}
+	if total != before {
+		t.Errorf("total = %d, want %d: shielding should not change what is counted", total, before)
+	}
+}
+
+func TestShieldedFieldsStillTakeTypingAndSelection(t *testing.T) {
+	f, doc := build(t, uiDoc)
+	w := test.NewWindow(f.build())
+	defer w.Close()
+
+	for _, id := range []string{"name", "budget"} {
+		entry := find[*widget.Entry](t, f, id)
+		w.Canvas().Focus(entry)
+		if w.Canvas().Focused() != entry {
+			t.Fatalf("the %s field did not take focus through the shield", id)
+		}
+		test.Type(entry, "12")
+		if entry.Text != "12" {
+			t.Errorf("the %s field holds %q after typing, want %q", id, entry.Text, "12")
+		}
+		entry.TypedShortcut(&fyne.ShortcutSelectAll{})
+		if got := entry.SelectedText(); got != "12" {
+			t.Errorf("selecting all of the %s field gave %q, want %q", id, got, "12")
+		}
+	}
+
+	if got := doc.Question("name").Answer; got != "12" {
+		t.Errorf("typing into a shielded text field recorded %#v", got)
+	}
+	if got := doc.Question("budget").Answer; got != 12.0 {
+		t.Errorf("typing into a shielded number field recorded %#v", got)
+	}
+}
+
+// The shield sits over the field, so anything it implements it takes away.
+// Scrolling is the whole of its business.
+func TestTheShieldAnswersOnlyToScrolling(t *testing.T) {
+	var s any = newScrollShield(nil)
+	if _, ok := s.(fyne.Scrollable); !ok {
+		t.Error("the shield must be scrollable, or it shields nothing")
+	}
+	for name, taken := range map[string]bool{
+		"Tappable":          asserted[fyne.Tappable](s),
+		"SecondaryTappable": asserted[fyne.SecondaryTappable](s),
+		"DoubleTappable":    asserted[fyne.DoubleTappable](s),
+		"Focusable":         asserted[fyne.Focusable](s),
+		"Draggable":         asserted[fyne.Draggable](s),
+		"Hoverable":         asserted[desktop.Hoverable](s),
+		"Mouseable":         asserted[desktop.Mouseable](s),
+		"Cursorable":        asserted[desktop.Cursorable](s),
+	} {
+		if taken {
+			t.Errorf("the shield implements %s, so it takes those events from the field", name)
+		}
+	}
+}
+
+func asserted[T any](v any) bool {
+	_, ok := v.(T)
+	return ok
+}
+
+// A single-line field has far less slack than a four-row textarea, so the
+// shield must not add so much as a pixel to the height the field asks for.
+func TestShieldingDoesNotChangeAFieldsSize(t *testing.T) {
+	f, _ := build(t, uiDoc)
+	for _, id := range []string{"name", "budget", "why"} {
+		entry := find[*widget.Entry](t, f, id)
+		if got, want := f.cards[id].control.MinSize(), entry.MinSize(); got != want {
+			t.Errorf("the shielded %s control asks for %v, the field itself for %v", id, got, want)
+		}
+	}
 }
