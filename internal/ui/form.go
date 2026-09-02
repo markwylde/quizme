@@ -155,15 +155,34 @@ func (f *form) header() fyne.CanvasObject {
 	title := widget.NewLabel(f.doc.Title)
 	title.TextStyle = fyne.TextStyle{Bold: true}
 	title.SizeName = theme.SizeNameHeadingText
+	title.Wrapping = fyne.TextWrapWord
 
 	items := []fyne.CanvasObject{title}
 	if intro := strings.TrimSpace(f.doc.Intro); intro != "" {
-		body := widget.NewLabel(intro)
-		body.Wrapping = fyne.TextWrapWord
-		items = append(items, body)
+		items = append(items, f.intro(intro))
 	}
 	items = append(items, widget.NewSeparator())
 	return container.NewVBox(items...)
+}
+
+// introLeading is the space between the intro's lines. The intro is the one
+// paragraph on the page that is read rather than answered, and the leading a
+// label sets for itself is tight for that.
+const introLeading = 6
+
+// intro lays the questionnaire's introduction out a line at a time.
+//
+// One label per authored line, rather than one label holding all of them: the
+// leading between rows inside a single label is the toolkit's own and cannot be
+// set, while the space between two labels is ours to choose.
+func (f *form) intro(intro string) fyne.CanvasObject {
+	var lines []fyne.CanvasObject
+	for _, line := range strings.Split(intro, "\n") {
+		body := widget.NewLabel(strings.TrimRight(line, " \t"))
+		body.Wrapping = fyne.TextWrapWord
+		lines = append(lines, body)
+	}
+	return container.New(&tightStack{gap: introLeading}, lines...)
 }
 
 func (f *form) footer() fyne.CanvasObject {

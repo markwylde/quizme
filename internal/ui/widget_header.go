@@ -88,7 +88,7 @@ func newQuestionHeader(q *questionnaire.Question, onTap func()) *questionHeader 
 	// enough to wrap -- which is most of them, on a real questionnaire -- left
 	// the answer stranded out to the right, level with a line of the question
 	// it had nothing to do with.
-	h.stack = container.New(&tightStack{}, h.prompt, h.summary)
+	h.stack = container.New(&tightStack{gap: promptAnswerGap}, h.prompt, h.summary)
 
 	// The chevron and the trailing marks are placed against the prompt's first
 	// line of text, which is neither the top of the header nor the middle of
@@ -184,15 +184,30 @@ func show(obj fyne.CanvasObject, visible bool) {
 	obj.Hide()
 }
 
-// tightStack stacks the prompt and the answer as one block.
+// tightStack stacks labels as one block of text, gap pixels apart.
 //
-// A box layout would set them a whole padding apart, on top of the padding each
-// label already carries, leaving a gap wide enough to read as two separate
-// things. Overlapping by that built-in padding puts them where two lines of the
-// same paragraph would sit.
-type tightStack struct{}
+// The gap is measured between the lines of text, not between the labels: a
+// label pads itself top and bottom, so two of them in a box layout sit a whole
+// label apart -- around three times the leading of one wrapped paragraph -- and
+// read as separate things. The stack takes that padding back out and adds the
+// gap it is asked for.
+//
+// This is the only way to set the leading between lines at all. Fyne applies
+// its line spacing between rich-text segments and explicitly not between the
+// rows inside one, so the wrapped lines of a label ignore the theme entirely.
+type tightStack struct {
+	gap float32
+}
 
-func (t *tightStack) overlap() float32 { return theme.Size(theme.SizeNameInnerPadding) }
+func (t *tightStack) overlap() float32 {
+	// A label's own padding, top and bottom, is what stands between the two
+	// lines of text before anything is asked for.
+	overlap := 2*theme.Size(theme.SizeNameInnerPadding) - t.gap
+	if overlap < 0 {
+		return 0
+	}
+	return overlap
+}
 
 func (t *tightStack) MinSize(objects []fyne.CanvasObject) fyne.Size {
 	var size fyne.Size
@@ -284,6 +299,11 @@ func (l *headerLayout) parts(objects []fyne.CanvasObject) (chevron, stack, trail
 	}
 	return objects[0], objects[1], objects[2], true
 }
+
+// promptAnswerGap is the space between a collapsed question's prompt and the
+// answer beneath it: a little more than the leading inside the prompt itself,
+// so the two read as prompt and response rather than one wrapped sentence.
+const promptAnswerGap = 8
 
 // promptInset is where a question's prompt starts: past the column the fold
 // chevron sits in. Everything else the question shows lines up with it, so this
