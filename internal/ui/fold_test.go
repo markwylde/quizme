@@ -21,10 +21,13 @@ func TestThePromptLivesInTheHeaderAndTheRestInTheBody(t *testing.T) {
 		if c.header == nil || c.body == nil {
 			t.Fatalf("question %q has no header/body split", q.ID)
 		}
-		if _, ok := search[*widget.Label](c.header, func(l *widget.Label) bool { return l.Text == q.Prompt }); !ok {
+		prompt, found := search[*promptText](c.header, first[*promptText]())
+		if !found {
 			t.Errorf("the prompt for %q is not in its header", q.ID)
+		} else if prompt.Text() != q.Prompt {
+			t.Errorf("the header for %q carries the prompt %q", q.ID, prompt.Text())
 		}
-		if _, ok := search[*widget.Label](c.body, func(l *widget.Label) bool { return l.Text == q.Prompt }); ok {
+		if _, ok := search[*promptText](c.body, first[*promptText]()); ok {
 			t.Errorf("the prompt for %q is still in its body as well", q.ID)
 		}
 		for what, obj := range map[string]fyne.CanvasObject{

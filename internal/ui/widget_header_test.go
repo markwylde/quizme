@@ -29,14 +29,8 @@ func TestHeaderShowsEveryPart(t *testing.T) {
 	if _, ok := search[*widget.Icon](h, first[*widget.Icon]()); !ok {
 		t.Error("no chevron in the header")
 	}
-	if h.prompt.Text != q.Prompt {
-		t.Errorf("prompt = %q, want %q", h.prompt.Text, q.Prompt)
-	}
-	if !h.prompt.TextStyle.Bold {
-		t.Error("the prompt should be bold")
-	}
-	if h.prompt.Wrapping != fyne.TextWrapWord {
-		t.Error("the prompt should wrap rather than widen the page")
+	if h.prompt.Text() != q.Prompt {
+		t.Errorf("prompt = %q, want %q", h.prompt.Text(), q.Prompt)
 	}
 	if h.marker == nil || h.marker.Text != "Required" {
 		t.Error("a required question should be marked as one")
@@ -59,7 +53,7 @@ func TestHeaderShowsEveryPart(t *testing.T) {
 	if _, ok := search[*tickMark](h, first[*tickMark]()); !ok {
 		t.Error("the tick is not reachable in the header's object tree")
 	}
-	if _, ok := search[*widget.Label](h, func(l *widget.Label) bool { return l.Text == q.Prompt }); !ok {
+	if _, ok := search[*promptText](h, first[*promptText]()); !ok {
 		t.Error("the prompt is not reachable in the header's object tree")
 	}
 }
@@ -146,6 +140,38 @@ func TestHeaderChevronPointsTheRightWay(t *testing.T) {
 	h.SetCollapsed(false)
 	if h.chevron.Resource != open {
 		t.Error("the chevron should return to its open form")
+	}
+}
+
+func TestTappingTheHeaderToggles(t *testing.T) {
+	taps := 0
+	q := &questionnaire.Question{ID: "q", Prompt: "Where do answers live?", Type: questionnaire.TypeText}
+	h := newQuestionHeader(q, func() { taps++ })
+
+	test.Tap(h)
+	if taps != 1 {
+		t.Fatalf("taps = %d, want 1", taps)
+	}
+}
+
+// The prompt draws plain text, so a tap on it reaches the header only because
+// the header is the nearest Tappable above it. Tapping the canvas exercises
+// exactly that dispatch.
+func TestTappingThePromptReachesTheHeader(t *testing.T) {
+	taps := 0
+	q := &questionnaire.Question{ID: "q", Prompt: "Where do answers live?", Type: questionnaire.TypeText}
+	h := newQuestionHeader(q, func() { taps++ })
+
+	w := test.NewWindow(h)
+	defer w.Close()
+	w.Resize(fyne.NewSize(500, 80))
+
+	if asserted[fyne.Tappable](h.prompt) {
+		t.Fatal("the prompt is tappable itself, so this proves nothing about the header")
+	}
+	test.TapCanvas(w.Canvas(), fyne.NewPos(250, 30))
+	if taps != 1 {
+		t.Errorf("taps = %d after tapping over the prompt, want 1", taps)
 	}
 }
 

@@ -32,7 +32,7 @@ type questionHeader struct {
 	onTap    func()
 
 	chevron *widget.Icon
-	prompt  *widget.Label
+	prompt  *promptText
 	marker  *widget.Label // "Required", or nil when the question is optional
 	summary *widget.Label
 	note    *widget.Icon
@@ -57,9 +57,7 @@ func newQuestionHeader(q *questionnaire.Question, onTap func()) *questionHeader 
 
 	h.chevron = widget.NewIcon(theme.MenuDropDownIcon())
 
-	h.prompt = widget.NewLabel(q.Prompt)
-	h.prompt.TextStyle = fyne.TextStyle{Bold: true}
-	h.prompt.Wrapping = fyne.TextWrapWord
+	h.prompt = newPromptText(q.Prompt)
 
 	// The summary has a line of its own beneath the prompt, so it can take the
 	// width that is left and truncate against it. (Beside the prompt it could
@@ -317,7 +315,7 @@ func promptInset() float32 {
 func promptLineCentre() float32 {
 	// "Ag" for an ascender and a descender, so the measurement is a full line
 	// whatever the prompt happens to say.
-	line := fyne.MeasureText("Ag", theme.Size(theme.SizeNameText), fyne.TextStyle{Bold: true}).Height
+	line := fyne.MeasureText("Ag", theme.Size(theme.SizeNameText), promptStyle).Height
 	return theme.Size(theme.SizeNameInnerPadding) + line/2
 }
 
