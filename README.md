@@ -17,8 +17,19 @@ go install github.com/markwylde/interrogate@latest
 ```
 
 Needs a desktop session. It is a native window — Fyne, not a browser — and a
-single static binary with its font compiled in, so it looks the same on macOS,
-Linux and Windows.
+single static binary with its font and its icon compiled in, so it looks the
+same on macOS, Linux and Windows.
+
+On macOS the Dock shows a generic tile for any bare binary: it takes an icon
+from an application bundle and nowhere else. `make bundle` builds one —
+`Interrogate.app`, with `icon.svg` drawn into it — and it runs the same way:
+
+```bash
+make bundle
+open -a ./Interrogate.app --args path/to/questions.yaml
+```
+
+Linux and Windows take the icon from the binary and need none of this.
 
 ## Use
 

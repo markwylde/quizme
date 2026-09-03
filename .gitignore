@@ -3,6 +3,11 @@
 /dist/
 /bin/
 
+# Drawn from icon.svg by `make icon`, and bundled by `make bundle`. Both are
+# built from the drawing, so neither is kept.
+/icon.png
+/Interrogate.app/
+
 # Go
 *.test
 *.out
