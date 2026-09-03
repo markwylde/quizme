@@ -226,7 +226,11 @@ func (f *form) buildCard(q *questionnaire.Question) *card {
 		body := widget.NewLabel(help)
 		body.Wrapping = fyne.TextWrapWord
 		body.SizeName = theme.SizeNameCaptionText
-		parts = append(parts, body)
+		// A label starts its text an inner padding below its own box. The
+		// answer on a folded question has that padding taken back by the stack
+		// above it, so the help has to have it taken back too -- otherwise the
+		// first line under a prompt jumps down as the question opens.
+		parts = append(parts, alignFirstLine(body))
 	}
 
 	c.control = f.control(q, c)
@@ -290,6 +294,13 @@ const (
 	entryInk  = 0.5 // an entry's border stroke
 	buttonInk = 0   // a button's filled background
 )
+
+// alignFirstLine lifts a label so its text starts where a folded question's
+// answer does, rather than an inner padding lower.
+func alignFirstLine(label fyne.CanvasObject) fyne.CanvasObject {
+	inner := theme.Size(theme.SizeNameInnerPadding)
+	return container.New(layout.NewCustomPaddedLayout(-inner, 0, 0, 0), label)
+}
 
 // alignInk sets a control in far enough that it draws where the prompt's text
 // does, given how far into itself it already draws.
