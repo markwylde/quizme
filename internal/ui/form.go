@@ -22,15 +22,27 @@ const radioLimit = 7
 
 // Run presents the questionnaire and blocks until the responder submits, saves,
 // or dismisses it, returning the status that outcome corresponds to.
-func Run(doc *questionnaire.Document) (questionnaire.Status, error) {
+//
+// icon is the image to show for the window and the running application, as the
+// bytes of an SVG. It is passed in rather than embedded here because the
+// drawing lives at the repository root, where the packaging tools also look for
+// it, and a package can only embed what sits beside it. Empty leaves whatever
+// the platform gives a bare binary.
+func Run(doc *questionnaire.Document, icon []byte) (questionnaire.Status, error) {
 	a := app.NewWithID("com.markwylde.interrogate")
 	a.Settings().SetTheme(newTheme())
+	if len(icon) > 0 {
+		a.SetIcon(iconResource(icon))
+	}
 
 	title := doc.Title
 	if title == "" {
 		title = "Questionnaire"
 	}
 	win := a.NewWindow(title)
+	if len(icon) > 0 {
+		win.SetIcon(iconResource(icon))
+	}
 
 	f := newForm(doc, win)
 	win.SetContent(f.build())
@@ -40,6 +52,12 @@ func Run(doc *questionnaire.Document) (questionnaire.Status, error) {
 	win.ShowAndRun()
 
 	return f.outcome, nil
+}
+
+// iconResource wraps the icon's bytes for the toolkit. The name matters: Fyne
+// decides how to read a resource from its extension, so an SVG has to say so.
+func iconResource(svg []byte) fyne.Resource {
+	return &fyne.StaticResource{StaticName: "icon.svg", StaticContent: svg}
 }
 
 // snapshot is a question's state when the form opened, used to tell whether the

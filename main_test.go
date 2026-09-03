@@ -289,3 +289,15 @@ func TestCommentsAreReported(t *testing.T) {
 		t.Errorf("entry = %+v", entry)
 	}
 }
+
+// The icon travels in the binary, so a build that cannot find the drawing fails
+// to compile rather than shipping without one. This says the embed carries
+// something, which a missing or empty file would not.
+func TestTheIconIsCompiledIn(t *testing.T) {
+	if len(iconSVG) == 0 {
+		t.Fatal("no icon was embedded")
+	}
+	if !strings.Contains(string(iconSVG), "<svg") {
+		t.Error("the embedded icon is not an SVG")
+	}
+}

@@ -16,6 +16,7 @@
 package main
 
 import (
+	_ "embed"
 	"errors"
 	"flag"
 	"fmt"
@@ -26,6 +27,14 @@ import (
 	"github.com/markwylde/interrogate/internal/questionnaire"
 	"github.com/markwylde/interrogate/internal/ui"
 )
+
+// The icon is compiled in, like the fonts, so one binary carries everything it
+// needs to look like itself. It lives here rather than beside the form because
+// a package can only embed what sits beside it, and the drawing belongs at the
+// repository root where the packaging tools look for it too.
+//
+//go:embed icon.svg
+var iconSVG []byte
 
 // Exit codes. Each responder outcome is distinct from the others and from a
 // failure, which is the point: branching should not require reading stdout.
@@ -49,7 +58,7 @@ func present(doc *questionnaire.Document) (questionnaire.Status, error) {
 	if err := ui.CheckDisplay(); err != nil {
 		return "", err
 	}
-	return ui.Run(doc)
+	return ui.Run(doc, iconSVG)
 }
 
 func run(args []string, stdout, stderr io.Writer, show presenter) int {
