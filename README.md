@@ -263,13 +263,50 @@ a hand-edited copy fails the tests.
 ```bash
 make build                                  # ./interrogate
 make test                                   # everything
-make run FILE=examples/demo.yaml            # try the form
 make skill                                  # regenerate .claude/skills/interrogate/
 
 INTERROGATE_RENDER=1 go test ./internal/ui/ -run RenderPreview   # refresh the screenshots
 ```
 
-`examples/demo.yaml` is a realistic questionnaire to poke at.
+### Trying the demo
+
+`examples/demo.yaml` is a realistic questionnaire to poke at — every question
+type, a `show_if` or two, and answers already on some of it. From a clone, one
+command builds it and opens the form:
+
+```bash
+make run FILE=examples/demo.yaml
+```
+
+That target is `go run`, so it compiles first and there is nothing to build
+beforehand. To launch the binary itself instead:
+
+```bash
+make build
+./interrogate examples/demo.yaml
+```
+
+On macOS both of those show a generic tile in the Dock, because the icon comes
+from an application bundle and nowhere else. For the real one, build the bundle
+and pass the file as an argument:
+
+```bash
+make bundle
+open -a ./Interrogate.app --args examples/demo.yaml
+```
+
+Answering the demo rewrites `examples/demo.yaml` in place, exactly as it would
+any questionnaire, so the committed file is one that has already been through
+the form. Reset it with `git checkout examples/demo.yaml`, or leave it alone and
+work on a copy:
+
+```bash
+cp examples/demo.yaml /tmp/demo.yaml
+make run FILE=/tmp/demo.yaml
+```
+
+Either way it needs a desktop session. Over a bare SSH connection it exits with
+an explanation rather than hanging.
 
 ## Licence
 
