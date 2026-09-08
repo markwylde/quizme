@@ -131,7 +131,7 @@ Questions gated by `show_if` SHALL appear and disappear as the answers they depe
 
 ### Requirement: Writing answers without disturbing the document
 
-On submit or save, `interrogate` SHALL write the answers into the questionnaire file it was given, changing only the `answer` and `comment` keys of each question and the top-level `status` and `submitted_at`. All other bytes of the file — comments, blank lines, key order, quoting style, and indentation — SHALL be preserved exactly.
+On submit or save, `interrogate` SHALL write the answers into the questionnaire file it was given, changing only the `answer` and `comment` keys of each question and the top-level `status` and `submitted_at`. All other bytes of the file — comments, blank lines, key order, quoting style, and indentation — SHALL be preserved exactly. The document it writes SHALL be a loadable questionnaire, whatever the shape of the answers it records.
 
 #### Scenario: Hand-written comments survive
 - **WHEN** the questionnaire file contains YAML comments and the responder submits
@@ -148,6 +148,18 @@ On submit or save, `interrogate` SHALL write the answers into the questionnaire 
 #### Scenario: Unanswered questions stay unanswered
 - **WHEN** the responder submits with a question left blank
 - **THEN** no `answer` key is written for that question
+
+#### Scenario: A single selection is written as a list
+- **WHEN** the responder ticks exactly one option in a `multiselect`
+- **THEN** the answer is written as a one-item block sequence beneath the `answer` key, in the same shape a multi-item answer takes
+
+#### Scenario: The written document loads again
+- **WHEN** the responder submits any combination of answers, one-item lists included
+- **THEN** the file that is written parses as a questionnaire, and the command reports the submission rather than an error
+
+#### Scenario: An answer that reads like a list is still text
+- **WHEN** the responder types a text answer beginning with `- `
+- **THEN** it is written as a quoted scalar and loads back as that same text, not as a sequence
 
 #### Scenario: Write is atomic
 - **WHEN** the write fails partway through for any reason

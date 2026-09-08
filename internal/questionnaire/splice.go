@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strings"
 	"time"
@@ -338,7 +339,10 @@ func renderEntry(key string, value any, indent int) []string {
 		return []string{pad + key + ": null"}
 	}
 
-	if len(body) == 1 {
+	// Only a scalar may share the key's line, so the choice is made on the
+	// value rather than on how many lines it rendered to: a one-element
+	// sequence is a single line too, and `key: - one` is not YAML.
+	if len(body) == 1 && !opensBlock(value, body[0]) {
 		return []string{pad + key + ": " + body[0]}
 	}
 
@@ -358,6 +362,19 @@ func renderEntry(key string, value any, indent int) []string {
 		out = append(out, indentLine(pad+"  ", l))
 	}
 	return out
+}
+
+// opensBlock reports whether a value's one-line rendering is the opening of a
+// block sequence or mapping, which cannot follow `key: ` on the same line. Only
+// a collection can be one: an empty one is the exception, because the encoder
+// gives it the flow form (`[]`, `{}`), which is a legal inline value.
+func opensBlock(value any, line string) bool {
+	switch reflect.ValueOf(value).Kind() {
+	case reflect.Slice, reflect.Array, reflect.Map, reflect.Struct:
+		return !strings.HasPrefix(line, "[") && !strings.HasPrefix(line, "{")
+	default:
+		return false
+	}
 }
 
 // indentLine prefixes a line unless it is empty; a blank line inside a block

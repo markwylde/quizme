@@ -235,6 +235,105 @@ questions:
 `)
 }
 
+// A one-element list renders to a single line, which used to be taken for a
+// scalar and spliced in after the key — `answer: - yaml` is not YAML, and the
+// document could not be read back.
+func TestSpliceSingleItemListAnswers(t *testing.T) {
+	// A rank answer is always a permutation of two or more options, so a
+	// multiselect with one box ticked is the only way to reach a one-element
+	// list.
+	src := `title: t
+questions:
+  - id: formats
+    type: multiselect
+    prompt: Which?
+    options: [yaml, json, toml]
+`
+	got := render(t, src, StatusSubmitted, func(d *Document) {
+		d.Question("formats").Answer = []string{"yaml"}
+	})
+	wantEqual(t, got, `title: t
+status: submitted
+submitted_at: "2026-09-01T12:00:00Z"
+questions:
+  - id: formats
+    type: multiselect
+    prompt: Which?
+    options: [yaml, json, toml]
+    answer:
+      - yaml
+`)
+}
+
+// The mirror image: a scalar that looks like a sequence entry stays a scalar,
+// so it must be quoted rather than pushed under the key.
+func TestSpliceTextAnswerThatLooksLikeAListItem(t *testing.T) {
+	src := `title: t
+questions:
+  - id: note
+    type: text
+    prompt: Note?
+`
+	got := render(t, src, StatusSubmitted, func(d *Document) {
+		d.Question("note").Answer = "- not a list"
+	})
+	wantEqual(t, got, `title: t
+status: submitted
+submitted_at: "2026-09-01T12:00:00Z"
+questions:
+  - id: note
+    type: text
+    prompt: Note?
+    answer: '- not a list'
+`)
+	doc, err := LoadBytes("test.yaml", []byte(got))
+	if err != nil {
+		t.Fatalf("LoadBytes: %v", err)
+	}
+	if a := doc.Question("note").Answer; a != "- not a list" {
+		t.Errorf("answer round-tripped as %#v, want the same text", a)
+	}
+}
+
+// A one-item answer on a flow-style question stays between the braces; the
+// flow renderer was never affected, and this pins that down.
+func TestSpliceSingleItemListInFlowMapping(t *testing.T) {
+	src := `title: t
+questions:
+  - {id: formats, type: multiselect, prompt: "Which?", options: [yaml, json]}
+`
+	got := render(t, src, StatusSubmitted, func(d *Document) {
+		d.Question("formats").Answer = []string{"yaml"}
+	})
+	wantEqual(t, got, `title: t
+status: submitted
+submitted_at: "2026-09-01T12:00:00Z"
+questions:
+  - {id: formats, type: multiselect, prompt: "Which?", options: [yaml, json], answer: [yaml]}
+`)
+}
+
+// renderEntry is exercised through Render everywhere else; these are the two
+// values that cannot arrive that way, because NormalizeAnswer turns a blank
+// answer into nil and the splicer then drops the key.
+func TestRenderEntryEdgeValues(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		value any
+		want  []string
+	}{
+		{"empty list stays inline as flow", []string{}, []string{"answer: []"}},
+		{"nil stays inline as null", nil, []string{"answer: null"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got := renderEntry("answer", tc.value, 0)
+			if len(got) != len(tc.want) || got[0] != tc.want[0] {
+				t.Errorf("renderEntry = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
 func TestSpliceScalarTypes(t *testing.T) {
 	src := `title: t
 questions:
