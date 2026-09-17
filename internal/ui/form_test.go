@@ -402,15 +402,15 @@ questions:
   - {id: a, type: text, prompt: "A?", required: true}
   - {id: b, type: text, prompt: "B?", required: true}
 `)
-	if got := f.summary.Text; got != "· 2 required questions left" {
+	if got := f.status.Text; got != "0 of 2 answered · 2 required questions left" {
 		t.Errorf("summary = %q", got)
 	}
 	find[*formEntry](t, f, "a").SetText("x")
-	if got := f.summary.Text; got != "· 1 required question left" {
+	if got := f.status.Text; got != "1 of 2 answered · 1 required question left" {
 		t.Errorf("summary = %q", got)
 	}
 	find[*formEntry](t, f, "b").SetText("y")
-	if got := f.summary.Text; got != "" {
+	if got := f.status.Text; got != "2 of 2 answered" {
 		t.Errorf("summary = %q, want empty once nothing is outstanding", got)
 	}
 }

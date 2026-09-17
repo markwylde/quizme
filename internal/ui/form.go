@@ -92,13 +92,13 @@ type form struct {
 
 	outcome questionnaire.Status
 
-	cards    map[string]*card
-	baseline map[string]snapshot
-	list     *fyne.Container
-	scroll   *container.Scroll
-	summary  *widget.Label
-	progress *progressBar
-	counted  *widget.Label
+	cards     map[string]*card
+	baseline  map[string]snapshot
+	list      *fyne.Container
+	scroll    *container.Scroll
+	status    *widget.Label
+	progress  *progressBar
+	footerRow *fyne.Container
 
 	// textSize is the size the form is shown at, as a percentage of the
 	// default, and onTextSize hears about every change to it.
@@ -237,10 +237,11 @@ func (f *form) footer() fyne.CanvasObject {
 	// through am I" and "what is stopping me submitting" -- so a bar answers
 	// the first at a glance and a label answers the second in words.
 	f.progress = newProgressBar()
-	f.counted = captionLabel("")
-	f.summary = widget.NewLabel("")
-	f.summary.Importance = widget.MediumImportance
-	f.summary.Wrapping = fyne.TextWrapWord
+	// One label rather than two side by side: two labels only share a baseline
+	// while they share a text size and a row, and neither survives the text
+	// growing. One sentence wraps like any other.
+	f.status = widget.NewLabel("")
+	f.status.Wrapping = fyne.TextWrapWord
 
 	submit := widget.NewButton("Submit", f.submit)
 	submit.Importance = widget.HighImportance
@@ -250,15 +251,20 @@ func (f *form) footer() fyne.CanvasObject {
 	clear := widget.NewButton("Clear all answers", f.requestClear)
 	clear.Importance = widget.LowImportance
 
-	status := container.NewHBox(f.counted, f.summary)
 	actions := container.NewHBox(clear, dismiss, submit)
+	row := &footerLayout{}
+	f.footerRow = container.New(row, f.status, actions)
+	row.owner = f.footerRow
 
 	// The bar spans the window along the top edge of the footer, where it also
 	// does the job the separator was doing.
-	return container.NewVBox(
-		f.progress,
-		container.NewPadded(container.NewBorder(nil, nil, status, actions)),
-	)
+	// Inset to the cards' edges, so the status text and the last button line up
+	// with the page above rather than with the window.
+	edge := func() float32 { return 2 * theme.Size(theme.SizeNamePadding) }
+	vertical := func() float32 { return theme.Size(theme.SizeNamePadding) }
+	return container.NewVBox(f.progress, container.New(&themedPadding{
+		top: vertical, bottom: vertical, left: edge, right: edge,
+	}, f.footerRow))
 }
 
 // buildCard lays out one question. Every question gets a comment box, whatever
@@ -784,10 +790,9 @@ func (f *form) syncVisibility() {
 }
 
 func (f *form) updateSummary() {
-	if f.summary == nil || f.progress == nil || f.counted == nil {
+	if f.status == nil || f.progress == nil {
 		return
 	}
-	f.counted.SetText(f.progressText())
 
 	answered, total := f.counts()
 	if total == 0 {
@@ -796,15 +801,24 @@ func (f *form) updateSummary() {
 		f.progress.SetValue(float64(answered) / float64(total))
 	}
 
-	missing := len(f.doc.Unanswered())
-	switch missing {
-	case 0:
-		f.summary.SetText("")
-	case 1:
-		f.summary.SetText("· 1 required question left")
-	default:
-		f.summary.SetText(fmt.Sprintf("· %d required questions left", missing))
+	f.status.SetText(f.statusText())
+	if f.footerRow != nil {
+		f.footerRow.Refresh() // longer text may no longer fit beside the actions
 	}
+}
+
+// statusText says how far through the questionnaire is and, while anything
+// required is outstanding, how much of that is left.
+func (f *form) statusText() string {
+	text := f.progressText()
+	switch missing := len(f.doc.Unanswered()); missing {
+	case 0:
+	case 1:
+		text += " · 1 required question left"
+	default:
+		text += fmt.Sprintf(" · %d required questions left", missing)
+	}
+	return text
 }
 
 // progressText labels the bar. A bare percentage is hard to act on; the counts
