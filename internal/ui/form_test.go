@@ -165,7 +165,7 @@ func TestMultiselectRecordsEveryChoice(t *testing.T) {
 
 func TestTextRecordsTyping(t *testing.T) {
 	f, doc := build(t, uiDoc)
-	entry := find[*widget.Entry](t, f, "name")
+	entry := find[*formEntry](t, f, "name")
 	entry.SetText("quizme")
 	if got := doc.Question("name").Answer; got != "quizme" {
 		t.Errorf("answer = %#v", got)
@@ -174,7 +174,7 @@ func TestTextRecordsTyping(t *testing.T) {
 
 func TestNumberRespectsBounds(t *testing.T) {
 	f, doc := build(t, uiDoc)
-	entry := find[*widget.Entry](t, f, "budget")
+	entry := find[*formEntry](t, f, "budget")
 
 	entry.SetText("12")
 	if got := doc.Question("budget").Answer; got != 12.0 {
@@ -405,11 +405,11 @@ questions:
 	if got := f.summary.Text; got != "· 2 required questions left" {
 		t.Errorf("summary = %q", got)
 	}
-	find[*widget.Entry](t, f, "a").SetText("x")
+	find[*formEntry](t, f, "a").SetText("x")
 	if got := f.summary.Text; got != "· 1 required question left" {
 		t.Errorf("summary = %q", got)
 	}
-	find[*widget.Entry](t, f, "b").SetText("y")
+	find[*formEntry](t, f, "b").SetText("y")
 	if got := f.summary.Text; got != "" {
 		t.Errorf("summary = %q, want empty once nothing is outstanding", got)
 	}
@@ -432,7 +432,7 @@ func TestDirtyTracksEveryKindOfChange(t *testing.T) {
 		change func(f *form, doc *questionnaire.Document)
 	}{
 		{"an answer", func(f *form, _ *questionnaire.Document) {
-			find[*widget.Entry](t, f, "name").SetText("x")
+			find[*formEntry](t, f, "name").SetText("x")
 		}},
 		{"a comment", func(f *form, doc *questionnaire.Document) {
 			doc.Question("name").Comment = "a note"
@@ -467,7 +467,7 @@ questions:
 	if f.dirty() {
 		t.Error("reopening an answered questionnaire should not look like unsaved work")
 	}
-	if got := find[*widget.Entry](t, f, "q").Text; got != "from last time" {
+	if got := find[*formEntry](t, f, "q").Text; got != "from last time" {
 		t.Errorf("the existing answer should be shown, got %q", got)
 	}
 }
@@ -500,7 +500,7 @@ questions:
 	if got := find[*widget.CheckGroup](t, f, "multi").Selected; !reflect.DeepEqual(got, []string{"y"}) {
 		t.Errorf("multiselect = %v", got)
 	}
-	if got := find[*widget.Entry](t, f, "num").Text; got != "12" {
+	if got := find[*formEntry](t, f, "num").Text; got != "12" {
 		t.Errorf("number = %q", got)
 	}
 	if got := find[*widget.RadioGroup](t, f, "bool").Selected; got != "No" {

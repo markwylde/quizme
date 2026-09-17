@@ -51,6 +51,29 @@ for checking a questionnaire you have just written — an agent verifying its ow
 output — rather than for catching problems a normal run would miss. It writes
 nothing and needs no display.
 
+### Text size
+
+The **A−** and **A+** buttons beside the title make the form's text smaller or
+larger, and so do the keyboard shortcuts: Cmd (Ctrl on Linux and Windows) with
+`+` or `=` for larger, `-` for smaller, and `0` for the default. Text and the
+space around it scale together, from 70% to 200% in steps of 10%.
+
+The size is remembered as soon as you change it, whether or not you then submit,
+in `~/.config/quizme/config.yaml`:
+
+```
+text_size: 130
+```
+
+To open at a particular size for one run, without changing the saved one:
+
+```bash
+quizme --text-size 150 path/to/questions.yaml
+```
+
+A config file that cannot be read or written only ever produces a warning on
+stderr. It never changes the questionnaire, stdout, or the exit code.
+
 ## The questionnaire
 
 ```yaml
@@ -193,6 +216,11 @@ status — answers from an earlier session are left alone.
 The footer carries a progress bar and a count. Questions hidden by `show_if` are
 in neither the answered nor the outstanding total, so the total moves as
 conditions resolve.
+
+**Clear all answers**, also in the footer, starts the form over. It asks first,
+then empties every answer and comment, including those on questions `show_if`
+is hiding. Nothing is written until you submit or save, so closing straight
+afterwards still asks whenever it would change the file.
 
 ## Output
 

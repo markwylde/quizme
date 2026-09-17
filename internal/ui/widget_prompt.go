@@ -127,7 +127,7 @@ func (p *promptText) reflow(width float32) {
 		}
 	}
 
-	step := p.lineHeight() + promptLeading
+	step := p.lineHeight() + scaled(promptLeading)
 	for i, line := range p.lines {
 		line.Text = wrapped[i]
 		line.Resize(fyne.NewSize(width-2*p.inset(), p.lineHeight()))
@@ -136,7 +136,7 @@ func (p *promptText) reflow(width float32) {
 	}
 
 	height := p.inset() + float32(len(wrapped))*p.lineHeight() +
-		float32(len(wrapped)-1)*promptLeading + p.tail()
+		float32(len(wrapped)-1)*scaled(promptLeading) + p.tail()
 	if height != p.height {
 		p.height = height
 		// The prompt is taller or shorter than whatever asked for it thought,
@@ -161,7 +161,7 @@ func (p *promptText) lineHeight() float32 { return p.measure("Ag").Height }
 func (p *promptText) inset() float32 { return theme.Size(theme.SizeNameInnerPadding) }
 
 // tail is the space under the last line. See promptTail.
-func (p *promptText) tail() float32 { return promptTail }
+func (p *promptText) tail() float32 { return scaled(promptTail) }
 
 // wrapWords breaks text into lines that fit the given width, keeping any line
 // breaks the author wrote themselves.

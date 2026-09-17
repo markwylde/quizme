@@ -90,7 +90,7 @@ func newQuestionHeader(q *questionnaire.Question, onTap func()) *questionHeader 
 	// between the prompt and the answer is the prompt's tail and nothing else --
 	// the same distance an open question leaves above its controls.
 	h.stack = container.New(
-		&tightStack{gap: theme.Size(theme.SizeNameInnerPadding)}, h.prompt, h.summary)
+		&tightStack{themed: theme.SizeNameInnerPadding}, h.prompt, h.summary)
 
 	// The chevron and the trailing marks are placed against the prompt's first
 	// line of text, which is neither the top of the header nor the middle of
@@ -198,13 +198,23 @@ func show(obj fyne.CanvasObject, visible bool) {
 // its line spacing between rich-text segments and explicitly not between the
 // rows inside one, so the wrapped lines of a label ignore the theme entirely.
 type tightStack struct {
+	// gap is the space asked for, in pixels at the default text size.
 	gap float32
+	// themed, when set, takes the gap from that theme size instead.
+	themed fyne.ThemeSizeName
+}
+
+func (t *tightStack) space() float32 {
+	if t.themed != "" {
+		return theme.Size(t.themed)
+	}
+	return scaled(t.gap)
 }
 
 func (t *tightStack) overlap() float32 {
 	// A label's own padding, top and bottom, is what stands between the two
 	// lines of text before anything is asked for.
-	overlap := 2*theme.Size(theme.SizeNameInnerPadding) - t.gap
+	overlap := 2*theme.Size(theme.SizeNameInnerPadding) - t.space()
 	if overlap < 0 {
 		return 0
 	}
@@ -391,7 +401,7 @@ func (c *cardStack) MinSize(objects []fyne.CanvasObject) fyne.Size {
 			size.Width = min.Width
 		}
 		if !first {
-			size.Height += c.gap
+			size.Height += scaled(c.gap)
 		}
 		size.Height += min.Height
 		first = false
@@ -420,7 +430,7 @@ func (c *cardStack) Layout(objects []fyne.CanvasObject, size fyne.Size) {
 			continue
 		}
 		if !first {
-			y += c.gap
+			y += scaled(c.gap)
 		}
 		height := o.MinSize().Height
 		o.Resize(fyne.NewSize(size.Width, height))

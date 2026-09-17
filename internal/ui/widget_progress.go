@@ -35,8 +35,6 @@ func newProgressBar() *progressBar {
 func (p *progressBar) CreateRenderer() fyne.WidgetRenderer {
 	p.track = canvas.NewRectangle(theme.Color(theme.ColorNameInputBorder))
 	p.fill = canvas.NewRectangle(theme.Color(theme.ColorNamePrimary))
-	p.track.CornerRadius = progressHeight / 2
-	p.fill.CornerRadius = progressHeight / 2
 	return &progressRenderer{bar: p}
 }
 
@@ -60,7 +58,7 @@ func (p *progressBar) Value() float64 { return p.value }
 
 func (p *progressBar) MinSize() fyne.Size {
 	p.ExtendBaseWidget(p)
-	return fyne.NewSize(110, progressHeight)
+	return fyne.NewSize(scaled(110), scaled(progressHeight))
 }
 
 type progressRenderer struct {
@@ -68,6 +66,9 @@ type progressRenderer struct {
 }
 
 func (r *progressRenderer) Layout(size fyne.Size) {
+	radius := scaled(progressHeight) / 2
+	r.bar.track.CornerRadius = radius
+	r.bar.fill.CornerRadius = radius
 	r.bar.track.Resize(size)
 	r.bar.track.Move(fyne.NewPos(0, 0))
 	r.bar.fill.Resize(fyne.NewSize(size.Width*float32(r.bar.value), size.Height))

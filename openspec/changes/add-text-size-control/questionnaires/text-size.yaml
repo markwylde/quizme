@@ -1,0 +1,73 @@
+title: Text size decisions
+intro: |
+  A few things to settle before I write the proposal for a remembered
+  text size control.
+
+status: submitted
+submitted_at: "2026-09-17T12:16:19+01:00"
+
+questions:
+  - id: controls
+    type: multiselect
+    prompt: How does someone change the text size?
+    help: I'd do both - shortcuts for people who know them, buttons so it can be found.
+    required: true
+    options:
+      - Keyboard shortcuts (Cmd/Ctrl + and -, 0 to reset)
+      - Visible A- / A+ buttons in the form's header
+      - Pinch / Ctrl+scroll
+    answer:
+      - Visible A- / A+ buttons in the form's header
+      - Keyboard shortcuts (Cmd/Ctrl + and -, 0 to reset)
+
+  - id: reset
+    type: boolean
+    prompt: Offer a way to reset to the default size?
+    help: Recommended. Cheap, and the way back when someone overshoots.
+    answer: true
+
+  - id: scope
+    type: select
+    prompt: What does the size change scale?
+    help: I'd scale all text and the spacing around it together, so a larger size doesn't look cramped.
+    required: true
+    options:
+      - All text and spacing together
+      - Text only, spacing unchanged
+    answer: All text and spacing together
+
+  - id: steps
+    type: select
+    prompt: What range and step?
+    help: I'd go with 10% steps from 70% to 200%.
+    options:
+      - 10% steps, 70%-200%
+      - 5 fixed sizes (XS, S, M, L, XL)
+      - 1pt steps on body text, 10-28pt
+    answer: 10% steps, 70%-200%
+
+  - id: config_path
+    type: select
+    prompt: Where does the config file live?
+    help: You said homedir, so I'd use ~/.config/quizme/config.yaml on every platform, which is a place people go looking for config.
+    required: true
+    options:
+      - ~/.config/quizme/config.yaml
+      - ~/.quizme.yaml
+      - The OS config dir (~/Library/Application Support/quizme on macOS)
+    answer: ~/.config/quizme/config.yaml
+
+  - id: save_when
+    type: select
+    prompt: When is the size saved?
+    help: I'd save it as soon as it changes, even if the form is then dismissed. It's a preference, not an answer.
+    options:
+      - Immediately on every change
+      - Only when the form is submitted or saved
+    answer: Immediately on every change
+
+  - id: flag
+    type: boolean
+    prompt: Also add a --text-size flag that overrides the config for one run?
+    help: I'd leave it out for now. Nothing asks for it yet.
+    answer: true

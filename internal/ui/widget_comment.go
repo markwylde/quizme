@@ -20,7 +20,7 @@ import (
 // A collapsed comment is never invisible: once there is text, the toggle shows
 // the start of it instead of an invitation to write one.
 type commentField struct {
-	entry    *widget.Entry
+	entry    *formEntry
 	toggle   *widget.Button
 	root     *fyne.Container
 	expanded bool
@@ -48,10 +48,10 @@ func (c *commentField) shielded() fyne.CanvasObject {
 // previewLimit is how much of a comment the collapsed toggle shows.
 const previewLimit = 44
 
-func newCommentField(current string, onChange func(string), shield func(fyne.CanvasObject) fyne.CanvasObject) *commentField {
+func newCommentField(current string, onChange func(string), shield func(fyne.CanvasObject) fyne.CanvasObject, onSize func(sizeChange)) *commentField {
 	c := &commentField{shield: shield}
 
-	c.entry = widget.NewMultiLineEntry()
+	c.entry = newFormEntry(true, onSize)
 	c.entry.SetPlaceHolder("Anything worth saying about this answer")
 	c.entry.SetMinRowsVisible(2)
 	c.entry.Wrapping = fyne.TextWrapWord
@@ -100,7 +100,7 @@ func (c *commentField) Toggle() {
 func (c *commentField) Expanded() bool { return c.expanded }
 
 // Entry exposes the text field, for tests and for focus handling.
-func (c *commentField) Entry() *widget.Entry { return c.entry }
+func (c *commentField) Entry() *formEntry { return c.entry }
 
 // FieldVisible reports whether the text field is on screen. The entry is
 // wrapped in a scroll shield, and it is the wrapper that gets hidden, so asking

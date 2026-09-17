@@ -205,7 +205,7 @@ func TestProgressStartsEmpty(t *testing.T) {
 func TestProgressFollowsAnswers(t *testing.T) {
 	f, _ := build(t, uiDoc)
 
-	find[*widget.Entry](t, f, "name").SetText("quizme")
+	find[*formEntry](t, f, "name").SetText("quizme")
 	if got := f.progress.Value(); !closeTo(got, 1.0/7.0) {
 		t.Errorf("progress = %v, want one seventh", got)
 	}
@@ -215,7 +215,7 @@ func TestProgressFollowsAnswers(t *testing.T) {
 	}
 
 	// Clearing an answer takes it back off the count.
-	find[*widget.Entry](t, f, "name").SetText("")
+	find[*formEntry](t, f, "name").SetText("")
 	if got := f.progress.Value(); !closeTo(got, 1.0/7.0) {
 		t.Errorf("progress = %v after clearing", got)
 	}
@@ -228,8 +228,8 @@ questions:
   - {id: a, type: text, prompt: "A?"}
   - {id: b, type: text, prompt: "B?"}
 `)
-	find[*widget.Entry](t, f, "a").SetText("x")
-	find[*widget.Entry](t, f, "b").SetText("y")
+	find[*formEntry](t, f, "a").SetText("x")
+	find[*formEntry](t, f, "b").SetText("y")
 	if got := f.progress.Value(); !closeTo(got, 1) {
 		t.Errorf("progress = %v, want complete", got)
 	}
@@ -447,7 +447,7 @@ func TestShieldedTextFieldStillAnswersAndCounts(t *testing.T) {
 	f, doc := build(t, uiDoc)
 	answered, before := f.counts()
 
-	entry := find[*widget.Entry](t, f, "name")
+	entry := find[*formEntry](t, f, "name")
 	entry.SetText("quizme")
 
 	if got := doc.Question("name").Answer; got != "quizme" {
@@ -468,7 +468,7 @@ func TestShieldedFieldsStillTakeTypingAndSelection(t *testing.T) {
 	defer w.Close()
 
 	for _, id := range []string{"name", "budget"} {
-		entry := find[*widget.Entry](t, f, id)
+		entry := find[*formEntry](t, f, id)
 		w.Canvas().Focus(entry)
 		if w.Canvas().Focused() != entry {
 			t.Fatalf("the %s field did not take focus through the shield", id)
@@ -527,7 +527,7 @@ func TestShieldingDoesNotChangeAFieldsHeight(t *testing.T) {
 	f, _ := build(t, uiDoc)
 	inset := theme.Size(theme.SizeNameInnerPadding) - entryInk
 	for _, id := range []string{"name", "budget", "why"} {
-		entry := find[*widget.Entry](t, f, id)
+		entry := find[*formEntry](t, f, id)
 		control := f.cards[id].control.MinSize()
 		if got, want := control.Height, entry.MinSize().Height; got != want {
 			t.Errorf("the shielded %s control is %v tall, the field itself %v", id, got, want)

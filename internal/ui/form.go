@@ -13,6 +13,7 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
+	"github.com/markwylde/quizme/internal/config"
 	"github.com/markwylde/quizme/internal/questionnaire"
 )
 
@@ -28,9 +29,12 @@ const radioLimit = 7
 // drawing lives at the repository root, where the packaging tools also look for
 // it, and a package can only embed what sits beside it. Empty leaves whatever
 // the platform gives a bare binary.
-func Run(doc *questionnaire.Document, icon []byte) (questionnaire.Status, error) {
+func Run(doc *questionnaire.Document, icon []byte, opts Options) (questionnaire.Status, error) {
+	if !config.ValidTextSize(opts.TextSize) {
+		opts.TextSize = config.DefaultTextSize
+	}
 	a := app.NewWithID("com.markwylde.quizme")
-	a.Settings().SetTheme(newTheme())
+	a.Settings().SetTheme(newScaledTheme(opts.TextSize))
 	if len(icon) > 0 {
 		a.SetIcon(iconResource(icon))
 	}
@@ -45,13 +49,27 @@ func Run(doc *questionnaire.Document, icon []byte) (questionnaire.Status, error)
 	}
 
 	f := newForm(doc, win)
+	f.textSize = opts.TextSize
+	f.onTextSize = opts.OnTextSize
 	win.SetContent(f.build())
+	f.registerSizeShortcuts(win.Canvas())
 	win.Resize(fyne.NewSize(780, 760))
 	win.CenterOnScreen()
 	win.SetCloseIntercept(f.requestClose)
 	win.ShowAndRun()
 
 	return f.outcome, nil
+}
+
+// Options are the responder's own preferences for how the form is shown, which
+// come from outside the questionnaire.
+type Options struct {
+	// TextSize is the size to open at, as a percentage of the default. Anything
+	// the form does not offer opens at the default.
+	TextSize int
+	// OnTextSize, if set, is told every size the responder changes to, so it
+	// can be remembered for next time.
+	OnTextSize func(percent int)
 }
 
 // iconResource wraps the icon's bytes for the toolkit. The name matters: Fyne
@@ -81,6 +99,13 @@ type form struct {
 	summary  *widget.Label
 	progress *progressBar
 	counted  *widget.Label
+
+	// textSize is the size the form is shown at, as a percentage of the
+	// default, and onTextSize hears about every change to it.
+	textSize   int
+	onTextSize func(int)
+	smaller    *widget.Button
+	larger     *widget.Button
 
 	// building is set while the page is being assembled. Restoring an answer
 	// already in the file goes through the same control callbacks a responder's
@@ -134,6 +159,7 @@ func newForm(doc *questionnaire.Document, win fyne.Window) *form {
 		win:      win,
 		cards:    map[string]*card{},
 		baseline: map[string]snapshot{},
+		textSize: config.DefaultTextSize,
 	}
 	for _, q := range doc.Questions {
 		f.baseline[q.ID] = snapshot{answer: answerKey(q.Answer), comment: q.Comment}
@@ -176,7 +202,9 @@ func (f *form) header() fyne.CanvasObject {
 	title.SizeName = theme.SizeNameHeadingText
 	title.Wrapping = fyne.TextWrapWord
 
-	items := []fyne.CanvasObject{title}
+	// The size controls sit level with the title, out of the way of the
+	// questions, and scroll away with it; the shortcuts work from anywhere.
+	items := []fyne.CanvasObject{container.NewBorder(nil, nil, nil, f.sizeButtons(), title)}
 	if intro := strings.TrimSpace(f.doc.Intro); intro != "" {
 		items = append(items, f.intro(intro))
 	}
@@ -217,9 +245,13 @@ func (f *form) footer() fyne.CanvasObject {
 	submit := widget.NewButton("Submit", f.submit)
 	submit.Importance = widget.HighImportance
 	dismiss := widget.NewButton("Dismiss", f.requestClose)
+	// Starting over sits with the other form-wide actions, where it can be
+	// reached from anywhere, but quietly: it is the one that throws work away.
+	clear := widget.NewButton("Clear all answers", f.requestClear)
+	clear.Importance = widget.LowImportance
 
 	status := container.NewHBox(f.counted, f.summary)
-	actions := container.NewHBox(dismiss, submit)
+	actions := container.NewHBox(clear, dismiss, submit)
 
 	// The bar spans the window along the top edge of the footer, where it also
 	// does the job the separator was doing.
@@ -257,7 +289,7 @@ func (f *form) buildCard(q *questionnaire.Question) *card {
 	c.comment = newCommentField(q.Comment, func(s string) {
 		q.Comment = s
 		c.header.Sync() // so a folded question still says it carries a note
-	}, f.scrollable)
+	}, f.scrollable, f.changeTextSize)
 	// An answer that is typed or ticked together has no single settling
 	// gesture, so those questions get one to press. It rides on the comment
 	// toggle's row rather than taking a row of its own.
@@ -316,18 +348,17 @@ const (
 // alignFirstLine lifts a label so its text starts where a folded question's
 // answer does, rather than an inner padding lower.
 func alignFirstLine(label fyne.CanvasObject) fyne.CanvasObject {
-	inner := theme.Size(theme.SizeNameInnerPadding)
-	return container.New(layout.NewCustomPaddedLayout(-inner, 0, 0, 0), label)
+	return container.New(&themedPadding{top: func() float32 {
+		return -theme.Size(theme.SizeNameInnerPadding)
+	}}, label)
 }
 
 // alignInk sets a control in far enough that it draws where the prompt's text
 // does, given how far into itself it already draws.
 func alignInk(control fyne.CanvasObject, ink float32) fyne.CanvasObject {
-	shift := theme.Size(theme.SizeNameInnerPadding) - ink
-	if shift <= 0 {
-		return control
-	}
-	return container.New(layout.NewCustomPaddedLayout(0, 0, shift, 0), control)
+	return container.New(&themedPadding{left: func() float32 {
+		return max(theme.Size(theme.SizeNameInnerPadding)-scaled(ink), 0)
+	}}, control)
 }
 
 // cardOpticalTail is the extra space under a card's last line.
@@ -342,8 +373,51 @@ const cardOpticalTail = 2
 
 // cardPadding is the space between a card's edge and the question inside it.
 func cardPadding() fyne.Layout {
-	pad := theme.Size(theme.SizeNamePadding)
-	return layout.NewCustomPaddedLayout(pad, pad+cardOpticalTail, pad, pad)
+	pad := func() float32 { return theme.Size(theme.SizeNamePadding) }
+	return &themedPadding{
+		top:    pad,
+		bottom: func() float32 { return pad() + scaled(cardOpticalTail) },
+		left:   pad,
+		right:  pad,
+	}
+}
+
+// themedPadding pads its content by amounts read from the theme each time it
+// lays out, rather than fixed when the page was built, so the page follows a
+// change of text size without being rebuilt. A nil side is no padding.
+type themedPadding struct {
+	top, bottom, left, right func() float32
+}
+
+func (p *themedPadding) sides() (top, bottom, left, right float32) {
+	read := func(f func() float32) float32 {
+		if f == nil {
+			return 0
+		}
+		return f()
+	}
+	return read(p.top), read(p.bottom), read(p.left), read(p.right)
+}
+
+func (p *themedPadding) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+	top, bottom, left, right := p.sides()
+	pos := fyne.NewPos(left, top)
+	inner := fyne.NewSize(size.Width-left-right, size.Height-top-bottom)
+	for _, o := range objects {
+		o.Resize(inner)
+		o.Move(pos)
+	}
+}
+
+func (p *themedPadding) MinSize(objects []fyne.CanvasObject) fyne.Size {
+	var min fyne.Size
+	for _, o := range objects {
+		if o.Visible() {
+			min = min.Max(o.MinSize())
+		}
+	}
+	top, bottom, left, right := p.sides()
+	return fyne.NewSize(min.Width+left+right, min.Height+top+bottom)
 }
 
 // headerBodyGap is the space between a question's prompt and the controls
@@ -416,7 +490,7 @@ func (f *form) multiselectControl(q *questionnaire.Question) fyne.CanvasObject {
 }
 
 func (f *form) textControl(q *questionnaire.Question) fyne.CanvasObject {
-	entry := widget.NewEntry()
+	entry := newFormEntry(false, f.changeTextSize)
 	if current, ok := q.Answer.(string); ok {
 		entry.SetText(current)
 	}
@@ -428,7 +502,7 @@ func (f *form) textControl(q *questionnaire.Question) fyne.CanvasObject {
 }
 
 func (f *form) textareaControl(q *questionnaire.Question) fyne.CanvasObject {
-	entry := widget.NewMultiLineEntry()
+	entry := newFormEntry(true, f.changeTextSize)
 	entry.SetMinRowsVisible(4)
 	entry.Wrapping = fyne.TextWrapWord
 	if current, ok := q.Answer.(string); ok {
@@ -477,7 +551,7 @@ func (f *form) scrollPage(e *fyne.ScrollEvent) {
 // bounds allow, so an out-of-range entry is refused with the bound shown rather
 // than silently clamped.
 func (f *form) numberControl(q *questionnaire.Question) fyne.CanvasObject {
-	entry := widget.NewEntry()
+	entry := newFormEntry(false, f.changeTextSize)
 	entry.SetPlaceHolder(boundsHint(q))
 	if current, ok := q.Answer.(float64); ok {
 		entry.SetText(strconv.FormatFloat(current, 'f', -1, 64))
@@ -842,6 +916,54 @@ func (f *form) requestClose() {
 	content := container.NewVBox(message, container.NewHBox(keep, discard, save))
 	d = dialog.NewCustomWithoutButtons("Unsaved answers", content, f.win)
 	d.Show()
+}
+
+// clearWarning is what the responder is asked before their answers are wiped.
+const clearWarning = "This will wipe all answers and comments. Are you sure?"
+
+// requestClear asks before clearing every answer and comment.
+func (f *form) requestClear() {
+	if f.win == nil {
+		return
+	}
+	message := widget.NewLabel(clearWarning)
+	message.Wrapping = fyne.TextWrapWord
+
+	var d dialog.Dialog
+	cancel := widget.NewButton("Cancel", func() { d.Hide() })
+	confirm := widget.NewButton("Clear all", func() {
+		d.Hide()
+		f.clearAll()
+	})
+	confirm.Importance = widget.DangerImportance
+
+	content := container.NewVBox(message, container.NewHBox(layout.NewSpacer(), cancel, confirm))
+	d = dialog.NewCustomWithoutButtons("Clear all answers", content, f.win)
+	d.Show()
+}
+
+// clearAll returns the questionnaire to unanswered: no answers, no comments,
+// and every question presented as it would be on a fresh copy.
+//
+// The model is cleared and the page rebuilt from it, rather than each control
+// being emptied where it stands. Every kind of control has its own idea of
+// empty and its own way of reporting a change, and a page built from an
+// unanswered model is already exactly right -- folds, visibility, progress, a
+// ranking back in authored order and no longer touched. The baseline is left
+// alone, so closing afterwards still asks whenever the file would change.
+//
+// Hidden questions are cleared too: an answer left behind a show_if would come
+// back the moment its condition did.
+func (f *form) clearAll() {
+	for _, q := range f.doc.Questions {
+		q.Answer = nil
+		q.Comment = ""
+	}
+	f.cards = map[string]*card{}
+	content := f.build()
+	if f.win != nil {
+		f.win.SetContent(content)
+	}
 }
 
 // savedStatus reports the outcome for a save: a questionnaire with everything

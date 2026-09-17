@@ -40,14 +40,14 @@ func newTickMark() *tickMark {
 func (t *tickMark) CreateRenderer() fyne.WidgetRenderer {
 	t.short = canvas.NewLine(t.colour())
 	t.long = canvas.NewLine(t.colour())
-	t.short.StrokeWidth = tickStroke
-	t.long.StrokeWidth = tickStroke
+	t.short.StrokeWidth = scaled(tickStroke)
+	t.long.StrokeWidth = scaled(tickStroke)
 	return &tickRenderer{mark: t, objects: []fyne.CanvasObject{t.short, t.long}}
 }
 
 func (t *tickMark) MinSize() fyne.Size {
 	t.ExtendBaseWidget(t)
-	return fyne.NewSize(tickSize, tickSize)
+	return fyne.NewSize(scaled(tickSize), scaled(tickSize))
 }
 
 // Refresh re-resolves the stroke colour, so a form open while the desktop
@@ -59,6 +59,7 @@ func (t *tickMark) Refresh() {
 			continue
 		}
 		line.StrokeColor = t.colour()
+		line.StrokeWidth = scaled(tickStroke)
 		line.Refresh()
 	}
 	t.BaseWidget.Refresh()

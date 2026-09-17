@@ -201,7 +201,7 @@ func answerControl(t *testing.T, f *form, q *questionnaire.Question) (fyne.Canva
 	case questionnaire.TypeMultiselect:
 		return searchIn[*widget.CheckGroup](c.control)
 	case questionnaire.TypeText, questionnaire.TypeTextarea, questionnaire.TypeNumber:
-		return searchIn[*widget.Entry](c.control)
+		return searchIn[*formEntry](c.control)
 	case questionnaire.TypeScale:
 		return searchIn[*scaleWidget](c.control)
 	case questionnaire.TypeRank:

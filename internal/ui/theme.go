@@ -5,6 +5,8 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/theme"
+
+	"github.com/markwylde/quizme/internal/config"
 )
 
 // The default Fyne look is a generic Material palette. A questionnaire is a
@@ -13,9 +15,33 @@ import (
 // page, quiet separators, one confident accent for the action that matters, and
 // noticeably more breathing room than the defaults give.
 
-type formTheme struct{ fyne.Theme }
+type formTheme struct {
+	fyne.Theme
 
-func newTheme() fyne.Theme { return formTheme{Theme: theme.DefaultTheme()} }
+	// percent is the responder's text size, as a percentage of the sizes below.
+	// Every size the theme answers is scaled by it -- text and the space around
+	// it together -- so a larger size reads as the same form, larger, rather
+	// than the same spacing crowded by bigger letters.
+	percent int
+}
+
+func newTheme() fyne.Theme { return newScaledTheme(config.DefaultTextSize) }
+
+// newScaledTheme is the form's theme at a text size other than the default.
+func newScaledTheme(percent int) fyne.Theme {
+	return formTheme{Theme: theme.DefaultTheme(), percent: percent}
+}
+
+// baseTextSize is the body text size at 100%. The current scale is read back
+// from the theme against it, so anything sized in plain pixels can follow the
+// responder's text size without being handed it.
+const baseTextSize = 14
+
+// scaled sizes a length given in pixels at 100% for the text size currently in
+// force.
+func scaled(px float32) float32 {
+	return px * theme.Size(theme.SizeNameText) / baseTextSize
+}
 
 // palette is one complete set of colours; the two variants below differ only in
 // their values, never in which roles they define.
@@ -163,6 +189,15 @@ func (t formTheme) Color(name fyne.ThemeColorName, variant fyne.ThemeVariant) co
 }
 
 func (t formTheme) Size(name fyne.ThemeSizeName) float32 {
+	percent := t.percent
+	if percent == 0 {
+		percent = config.DefaultTextSize
+	}
+	return t.baseSize(name) * float32(percent) / 100
+}
+
+// baseSize is a size at 100%.
+func (t formTheme) baseSize(name fyne.ThemeSizeName) float32 {
 	// A form is read before it is filled in, so it gets more space and slightly
 	// larger text than a dense application would want.
 	switch name {

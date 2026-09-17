@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/markwylde/quizme/internal/questionnaire"
+	"github.com/markwylde/quizme/internal/ui"
 )
 
 // --validate is for a caller checking a questionnaire it has just written. A
@@ -67,7 +68,7 @@ func TestValidateNeedsNoDisplay(t *testing.T) {
 	// The presenter is where the display check lives, and --validate must never
 	// reach it, so the flag works over SSH and in CI.
 	path := writeSample(t, sample)
-	got := invoke(t, []string{"--validate", path}, func(*questionnaire.Document) (questionnaire.Status, error) {
+	got := invoke(t, []string{"--validate", path}, func(*questionnaire.Document, ui.Options) (questionnaire.Status, error) {
 		t.Error("--validate reached the presenter, so it would fail without a display")
 		return questionnaire.StatusDismissed, nil
 	})

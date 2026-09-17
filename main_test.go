@@ -9,12 +9,13 @@ import (
 	"testing"
 
 	"github.com/markwylde/quizme/internal/questionnaire"
+	"github.com/markwylde/quizme/internal/ui"
 )
 
 // answered returns a presenter that fills in the given answers and leaves the
 // form with the given status, standing in for a person at the keyboard.
 func answered(status questionnaire.Status, answers map[string]any) presenter {
-	return func(doc *questionnaire.Document) (questionnaire.Status, error) {
+	return func(doc *questionnaire.Document, _ ui.Options) (questionnaire.Status, error) {
 		for id, v := range answers {
 			q := doc.Question(id)
 			if q == nil {
@@ -160,7 +161,7 @@ func TestInvalidQuestionnaireOpensNothing(t *testing.T) {
 // neverCalled fails the test if the form is opened.
 func neverCalled(t *testing.T) presenter {
 	t.Helper()
-	return func(*questionnaire.Document) (questionnaire.Status, error) {
+	return func(*questionnaire.Document, ui.Options) (questionnaire.Status, error) {
 		t.Error("the form was opened for a questionnaire that should have been rejected first")
 		return questionnaire.StatusDismissed, nil
 	}
@@ -194,7 +195,7 @@ func TestUsageErrors(t *testing.T) {
 
 func TestPresenterFailureIsReported(t *testing.T) {
 	path := writeSample(t, sample)
-	got := invoke(t, []string{path}, func(*questionnaire.Document) (questionnaire.Status, error) {
+	got := invoke(t, []string{path}, func(*questionnaire.Document, ui.Options) (questionnaire.Status, error) {
 		return "", os.ErrPermission
 	})
 	if got.code != exitError {
@@ -207,7 +208,7 @@ func TestPresenterFailureIsReported(t *testing.T) {
 
 func TestUnusableOutcomeIsRejected(t *testing.T) {
 	path := writeSample(t, sample)
-	got := invoke(t, []string{path}, func(*questionnaire.Document) (questionnaire.Status, error) {
+	got := invoke(t, []string{path}, func(*questionnaire.Document, ui.Options) (questionnaire.Status, error) {
 		return questionnaire.StatusPending, nil
 	})
 	if got.code != exitError {
@@ -270,7 +271,7 @@ questions:
 
 func TestCommentsAreReported(t *testing.T) {
 	path := writeSample(t, sample)
-	got := invoke(t, []string{path}, func(doc *questionnaire.Document) (questionnaire.Status, error) {
+	got := invoke(t, []string{path}, func(doc *questionnaire.Document, _ ui.Options) (questionnaire.Status, error) {
 		// A comment with no answer must still travel: it is often the most
 		// precise thing the responder said.
 		doc.Question("notes").Comment = "worth a conversation"

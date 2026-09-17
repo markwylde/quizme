@@ -114,7 +114,7 @@ func TestFoldingHidesTheBodyButKeepsIt(t *testing.T) {
 		t.Fatal("the question should start with its body showing")
 	}
 	expanded := c.root.MinSize().Height
-	field := find[*widget.Entry](t, f, "name")
+	field := find[*formEntry](t, f, "name")
 
 	f.toggle(c)
 	if c.body.Visible() {
@@ -131,7 +131,7 @@ func TestFoldingHidesTheBodyButKeepsIt(t *testing.T) {
 	}
 	// Hidden, not discarded: the bindings depend on these being the same
 	// objects when the question comes back.
-	if got := find[*widget.Entry](t, f, "name"); got != field {
+	if got := find[*formEntry](t, f, "name"); got != field {
 		t.Error("the field was rebuilt rather than hidden")
 	}
 
@@ -419,7 +419,7 @@ func TestTypingNeverFolds(t *testing.T) {
 		if id == "why" {
 			find[*widget.RadioGroup](t, f, "storage").SetSelected("sidecar")
 		}
-		entry := find[*widget.Entry](t, f, id)
+		entry := find[*formEntry](t, f, id)
 		entry.SetText("12")
 		if f.cards[id].collapsed() {
 			t.Errorf("the %s question folded while it was being typed into", id)
@@ -446,8 +446,8 @@ func TestDoneFoldsTheTypedQuestions(t *testing.T) {
 		set  func(f *form, t *testing.T)
 		want string
 	}{
-		{id: "name", set: func(f *form, t *testing.T) { find[*widget.Entry](t, f, "name").SetText("quizme") }, want: "quizme"},
-		{id: "budget", set: func(f *form, t *testing.T) { find[*widget.Entry](t, f, "budget").SetText("12") }, want: "12"},
+		{id: "name", set: func(f *form, t *testing.T) { find[*formEntry](t, f, "name").SetText("quizme") }, want: "quizme"},
+		{id: "budget", set: func(f *form, t *testing.T) { find[*formEntry](t, f, "budget").SetText("12") }, want: "12"},
 		{id: "formats", set: func(f *form, t *testing.T) {
 			find[*widget.CheckGroup](t, f, "formats").SetSelected([]string{"yaml", "json"})
 		}, want: "yaml, json"},
@@ -481,7 +481,7 @@ func TestTheTextareaHasADoneAction(t *testing.T) {
 	if c.done == nil {
 		t.Fatal("a textarea has no settling gesture of its own, so it needs Done")
 	}
-	find[*widget.Entry](t, f, "why").SetText("because it drifts")
+	find[*formEntry](t, f, "why").SetText("because it drifts")
 	c.done.OnTapped()
 	if !c.collapsed() {
 		t.Error("Done did not fold the textarea")
@@ -507,7 +507,7 @@ func TestEnterFoldsASingleLineField(t *testing.T) {
 			w := test.NewWindow(f.build())
 			defer w.Close()
 
-			entry := find[*widget.Entry](t, f, id)
+			entry := find[*formEntry](t, f, id)
 			w.Canvas().Focus(entry)
 			test.Type(entry, "12")
 			if f.cards[id].collapsed() {
@@ -531,12 +531,12 @@ func TestMovingOnWithoutFinishingLeavesTheQuestionOpen(t *testing.T) {
 	w := test.NewWindow(f.build())
 	defer w.Close()
 
-	name := find[*widget.Entry](t, f, "name")
+	name := find[*formEntry](t, f, "name")
 	w.Canvas().Focus(name)
 	test.Type(name, "quizme")
 
 	// Off to another question, without saying they were done with this one.
-	budget := find[*widget.Entry](t, f, "budget")
+	budget := find[*formEntry](t, f, "budget")
 	w.Canvas().Focus(budget)
 	test.Type(budget, "3")
 
@@ -609,8 +609,8 @@ func TestFoldingChangesNothingThatIsCounted(t *testing.T) {
 	answer := func(f *form, t *testing.T) {
 		t.Helper()
 		find[*widget.RadioGroup](t, f, "storage").SetSelected("both")
-		find[*widget.Entry](t, f, "name").SetText("quizme")
-		find[*widget.Entry](t, f, "budget").SetText("7")
+		find[*formEntry](t, f, "name").SetText("quizme")
+		find[*formEntry](t, f, "budget").SetText("7")
 	}
 	answer(folded, t)
 	answer(open, t)
@@ -722,7 +722,7 @@ func TestFoldingReachesNeitherTheFileNorTheOutput(t *testing.T) {
 	answer := func(f *form, t *testing.T) {
 		t.Helper()
 		find[*widget.RadioGroup](t, f, "storage").SetSelected("both")
-		find[*widget.Entry](t, f, "name").SetText("quizme")
+		find[*formEntry](t, f, "name").SetText("quizme")
 		f.cards["name"].comment.Entry().SetText("a note")
 	}
 
