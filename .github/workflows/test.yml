@@ -1,0 +1,53 @@
+name: Test
+
+on:
+  push:
+    branches: ["**"]
+    tags-ignore: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # Fyne links against the system's GL and X11 headers, which the Linux
+      # runner does not carry. macOS needs nothing: the SDKs are already there.
+      - name: Install the GUI headers Fyne builds against
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libgl1-mesa-dev xorg-dev libxkbcommon-dev
+
+      - name: Check the formatting
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "gofmt would rewrite:" >&2
+            echo "$unformatted" >&2
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Build
+        run: go build ./...
+
+      - name: Test
+        run: go test ./...
