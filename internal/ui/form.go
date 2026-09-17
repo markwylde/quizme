@@ -886,7 +886,7 @@ func (f *form) flagMissing(missing []*questionnaire.Question) {
 		return
 	}
 	dialog.ShowCustom("Some questions still need answers", "Back to the form",
-		container.NewVBox(message), f.win)
+		f.dialogBody(message), f.win)
 }
 
 // scrollTo brings a question into view.
@@ -927,9 +927,55 @@ func (f *form) requestClose() {
 	discard.Importance = widget.DangerImportance
 	keep := widget.NewButton("Keep editing", func() { d.Hide() })
 
-	content := container.NewVBox(message, container.NewHBox(keep, discard, save))
+	content := f.dialogBody(message, container.NewHBox(layout.NewSpacer(), keep, discard, save))
 	d = dialog.NewCustomWithoutButtons("Unsaved answers", content, f.win)
 	d.Show()
+}
+
+// dialogReadingWidth is how wide a dialog's text is set, in pixels at the
+// default text size: a comfortable line for a sentence or two.
+const dialogReadingWidth = 420
+
+// dialogBody stacks a dialog's content at a reading width.
+//
+// A dialog is as small as its content allows, and a wrapping label allows
+// almost nothing -- so left to itself a one-sentence warning came out a word or
+// two per line. The width follows the text size, but never past the window.
+func (f *form) dialogBody(objects ...fyne.CanvasObject) fyne.CanvasObject {
+	return container.New(&readingWidth{width: func() float32 {
+		w := scaled(dialogReadingWidth)
+		if f.win != nil {
+			// Leave the dialog's own padding and some of the page showing.
+			if room := f.win.Canvas().Size().Width - 6*theme.Size(theme.SizeNamePadding) - 2*theme.Size(theme.SizeNameInnerPadding); room > 0 && room < w {
+				w = room
+			}
+		}
+		return w
+	}}, container.NewVBox(objects...))
+}
+
+// readingWidth sets its content at a chosen width and is exactly as tall as the
+// content is at that width. Wrapped text only knows its height once it has a
+// width, so the width is given before the height is asked.
+type readingWidth struct {
+	width func() float32
+}
+
+func (r *readingWidth) MinSize(objects []fyne.CanvasObject) fyne.Size {
+	w := r.width()
+	var h float32
+	for _, o := range objects {
+		o.Resize(fyne.NewSize(w, o.MinSize().Height))
+		h = fyne.Max(h, o.MinSize().Height)
+	}
+	return fyne.NewSize(w, h)
+}
+
+func (r *readingWidth) Layout(objects []fyne.CanvasObject, size fyne.Size) {
+	for _, o := range objects {
+		o.Resize(size)
+		o.Move(fyne.NewPos(0, 0))
+	}
 }
 
 // clearWarning is what the responder is asked before their answers are wiped.
@@ -951,7 +997,7 @@ func (f *form) requestClear() {
 	})
 	confirm.Importance = widget.DangerImportance
 
-	content := container.NewVBox(message, container.NewHBox(layout.NewSpacer(), cancel, confirm))
+	content := f.dialogBody(message, container.NewHBox(layout.NewSpacer(), cancel, confirm))
 	d = dialog.NewCustomWithoutButtons("Clear all answers", content, f.win)
 	d.Show()
 }

@@ -352,3 +352,27 @@ func TestClearingKeepsTheTextSize(t *testing.T) {
 		t.Error("the rebuilt size buttons are missing or wrong")
 	}
 }
+
+// A dialog's text is set at a reading width rather than squeezed to the
+// narrowest its words allow.
+func TestDialogsAreWideEnoughToRead(t *testing.T) {
+	for _, percent := range []int{100, 130} {
+		func() {
+			restore := useTheme(t, newScaledTheme(percent))
+			defer restore()
+			f, _, win := inWindow(t, uiDoc)
+			top := clearDialog(t, f, win)
+			label, ok := deepSearch[*widget.Label](top, func(l *widget.Label) bool { return l.Text == clearWarning })
+			if !ok {
+				t.Fatal("no warning")
+			}
+			if got, want := label.Size().Width, scaled(dialogReadingWidth)-1; got < want {
+				t.Errorf("at %d%% the warning is set %v wide, want at least %v", percent, got, want)
+			}
+			if lines := label.MinSize().Height / fyne.MeasureText("Ag", scaled(14), fyne.TextStyle{}).Height; lines > 2 {
+				t.Errorf("at %d%% the warning runs to about %.0f lines", percent, lines)
+			}
+			win.Canvas().Overlays().Remove(top)
+		}()
+	}
+}
