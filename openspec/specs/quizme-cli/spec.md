@@ -11,6 +11,8 @@ Defines the `quizme` command: how it is invoked, how the desktop form behaves fo
 
 It SHALL also accept a `--validate` flag, which checks the questionnaire and exits without opening a window, so a questionnaire can be verified without interrupting anyone.
 
+It SHALL also accept a `--text-size <percent>` flag, which sets the form's text size for that run. The value SHALL be a whole-number percentage from 70 to 200 in steps of 10.
+
 #### Scenario: Valid questionnaire path
 - **WHEN** `quizme path/to/questions.yaml` is run and the file is a valid questionnaire
 - **THEN** a window opens presenting the questionnaire's title, intro, and questions
@@ -43,8 +45,15 @@ It SHALL also accept a `--validate` flag, which checks the questionnaire and exi
 - **WHEN** `--validate` is run in an environment with no display available
 - **THEN** it still reports the questionnaire's validity, because no window was needed
 
-### Requirement: Single scrolling form
+#### Scenario: Text size given on the command line
+- **WHEN** `quizme --text-size 130 path/to/questions.yaml` is run
+- **THEN** the form opens at 130% text size, whatever size is saved in the user config
 
+#### Scenario: Text size out of range or off-step
+- **WHEN** `--text-size` is given `60`, `210`, `125`, or a value that is not a whole number
+- **THEN** no window opens, an error naming the accepted range and step is written to stderr, and the exit code signals a usage error
+
+### Requirement: Single scrolling form
 
 All questions SHALL be presented together on one vertically scrolling page, so the responder can read ahead, answer in any order, and revise earlier answers before submitting.
 
@@ -91,7 +100,6 @@ Each question SHALL be rendered with a control suited to its declared type, and 
 - **THEN** the responder can reorder its options and the resulting order is the answer
 
 ### Requirement: Comment box on every question
-
 
 Every question SHALL offer a comment field alongside its answer control, usable independently of whether the question is answered. The field MAY rest collapsed behind a visible affordance, so that a page of questions is not dominated by fields most responders will not use, but SHALL always be reachable in one action from the expanded question.
 
@@ -307,7 +315,6 @@ Scrolling the questionnaire SHALL continue to work wherever the pointer rests, i
 
 ### Requirement: Questions can be collapsed and expanded
 
-
 Each question SHALL have an expanded presentation, showing its prompt, help, answer control and comment field, and a collapsed presentation carrying only its prompt, the answer it holds, and the marks that describe it.
 
 When the questionnaire opens, a question that already carries an answer SHALL be presented collapsed, and a question with no answer SHALL be presented expanded. A questionnaire therefore opens showing what is left to do rather than what is already settled, and nothing outstanding is hidden from a responder seeing the page for the first time. A comment is not an answer for this purpose.
@@ -347,7 +354,6 @@ Each question's header SHALL act as a control that collapses it when expanded an
 - **THEN** that further question appears expanded
 
 ### Requirement: A settled answer collapses its question
-
 
 A question answered in a single gesture SHALL collapse itself as soon as that answer is recorded, so the page becomes a shrinking list of outstanding work without the responder having to fold anything by hand. This SHALL apply to `select`, `boolean` and `scale` questions, and to a `rank` question once its order is confirmed.
 
@@ -461,7 +467,6 @@ An answer too long for one row SHALL be shortened rather than wrapped or allowed
 
 ### Requirement: A reorder is shown happening
 
-
 When a `rank` question's options change places, the rows SHALL be presented travelling to their new positions rather than appearing in them. The travel SHALL be brief enough not to delay a responder reordering repeatedly, and SHALL apply however the reorder was asked for — an arrow pressed or a row dragged.
 
 The recorded answer SHALL NOT wait on the travel: the new order is the answer from the moment the reorder is made. A further reorder while rows are still travelling SHALL continue from where those rows have reached, rather than completing the previous travel first. A reorder that is refused, because the row is already at the end it was sent towards, SHALL move nothing.
@@ -492,7 +497,6 @@ The recorded answer SHALL NOT wait on the travel: the new order is the answer fr
 
 ### Requirement: Collapsing changes only what is shown
 
-
 Whether a question is collapsed SHALL have no effect on anything the questionnaire records or reports. The recorded answer and comment, the evaluation of `show_if` conditions, the progress indicator, whether the form counts as having unsaved changes, the file written on submit or save, and the JSON printed on stdout SHALL all be identical for a collapsed question and an expanded one.
 
 Which questions are collapsed SHALL NOT be written to the questionnaire file.
@@ -519,7 +523,6 @@ Which questions are collapsed SHALL NOT be written to the questionnaire file.
 
 ### Requirement: Outstanding required questions are never hidden by a fold
 
-
 When a submit is refused because a visible required question is unanswered, every question flagged SHALL be expanded, with its warning shown, and the form SHALL move to the first of them. A responder SHALL never be shown a warning about a question they cannot see the control for.
 
 #### Scenario: Submit blocked by a collapsed question
@@ -533,3 +536,137 @@ When a submit is refused because a visible required question is unanswered, ever
 #### Scenario: Answering a flagged question
 - **WHEN** the responder answers a question that was expanded by a refused submit
 - **THEN** its warning clears and the answer is recorded as normal
+
+### Requirement: Adjustable text size
+
+The form SHALL let the responder make its text larger or smaller, and return it to the default, while the form is open. A size change SHALL scale all text on the form and the spacing around it together. Sizes SHALL run from 70% to 200% of the default in steps of 10%, and the default SHALL be 100%.
+
+The control SHALL be offered as visible decrease and increase buttons in the form's header, and as keyboard shortcuts: the platform's primary modifier (Cmd on macOS, Ctrl elsewhere) with `+` (or `=`) to increase, `-` to decrease, and `0` to reset to 100%.
+
+#### Scenario: Increasing the size
+- **WHEN** the form is at 100% and the responder presses the increase button or the increase shortcut
+- **THEN** the form is shown at 110%, with text and spacing both larger
+
+#### Scenario: Decreasing the size
+- **WHEN** the form is at 100% and the responder presses the decrease button or the decrease shortcut
+- **THEN** the form is shown at 90%
+
+#### Scenario: Resetting the size
+- **WHEN** the form is at any size other than 100% and the responder presses the reset shortcut
+- **THEN** the form is shown at 100%
+
+#### Scenario: At the largest size
+- **WHEN** the form is at 200%
+- **THEN** the increase button is disabled and the increase shortcut leaves the size unchanged
+
+#### Scenario: At the smallest size
+- **WHEN** the form is at 70%
+- **THEN** the decrease button is disabled and the decrease shortcut leaves the size unchanged
+
+#### Scenario: Changing size keeps the responder's work
+- **WHEN** the responder changes the text size after answering, commenting on, or folding questions
+- **THEN** every answer, comment, and fold state is unchanged and the form still counts as having the same unsaved changes as before
+
+#### Scenario: Shortcut while typing in a field
+- **WHEN** focus is in a text field and the responder presses the increase shortcut
+- **THEN** the size increases and no character is inserted into the field
+
+### Requirement: Text size is remembered in the user config
+
+The text size SHALL be stored in the user's config file at `~/.config/quizme/config.yaml` on every platform. The form SHALL open at the stored size when no `--text-size` flag is given. A change the responder makes on the form SHALL be written to the config as soon as it happens, whatever the questionnaire's eventual outcome.
+
+A missing or unusable config SHALL never stop a questionnaire from being answered.
+
+#### Scenario: First run with no config
+- **WHEN** `quizme` runs and `~/.config/quizme/config.yaml` does not exist
+- **THEN** the form opens at 100% and no config file is created until the responder changes the size
+
+#### Scenario: Size remembered across runs
+- **WHEN** the responder sets the size to 130%, closes the form, and later runs `quizme` again without `--text-size`
+- **THEN** the new form opens at 130%
+
+#### Scenario: Remembered even when dismissed
+- **WHEN** the responder changes the size and then dismisses the questionnaire
+- **THEN** the new size is still saved to the config
+
+#### Scenario: Missing config directory
+- **WHEN** the responder changes the size and `~/.config/quizme/` does not exist
+- **THEN** the directory and file are created and the size is saved
+
+#### Scenario: Flag does not overwrite the saved size
+- **WHEN** the saved size is 120% and `quizme --text-size 150` runs and the responder changes nothing
+- **THEN** the form opens at 150% and the config still says 120%
+
+#### Scenario: Changing the size during a flagged run
+- **WHEN** a run was started with `--text-size 150` and the responder increases the size to 160%
+- **THEN** 160% is saved to the config
+
+#### Scenario: Unreadable or invalid config
+- **WHEN** the config file cannot be parsed, or holds a text size outside 70–200 or off the 10% step
+- **THEN** the form opens at 100% (or at the nearest valid size, if the value was a number), a warning naming the file is written to stderr, and the exit code and stdout are unaffected
+
+#### Scenario: Config cannot be written
+- **WHEN** the responder changes the size and the config file cannot be written
+- **THEN** the form still changes size, a warning is written to stderr, and the questionnaire can still be submitted, saved, or dismissed as normal
+
+#### Scenario: Other keys in the config
+- **WHEN** the config file holds keys other than the text size and the size is saved
+- **THEN** those other keys are kept
+
+### Requirement: Text size is not part of the questionnaire's outcome
+
+Changing the text size SHALL NOT be written to the questionnaire file, reported on stdout, or reflected in the exit code, and SHALL NOT count as an unsaved change to the questionnaire.
+
+#### Scenario: Only the size changed
+- **WHEN** the responder changes the text size, answers nothing, and closes the window
+- **THEN** no save-or-discard prompt is shown, the status becomes `dismissed`, and the questionnaire file is unchanged
+
+#### Scenario: Submitting after a size change
+- **WHEN** the responder changes the size and then submits
+- **THEN** the questionnaire file and the JSON on stdout are the same as if the size had never changed
+
+### Requirement: Clearing all answers
+
+The form SHALL offer a "Clear all answers" action that stays reachable from anywhere in the questionnaire. Choosing it SHALL first ask for confirmation with the message "This will wipe all answers and comments. Are you sure?", and SHALL clear nothing unless the responder confirms.
+
+On confirmation, every question SHALL become unanswered and every comment SHALL become empty, including those on questions currently hidden by `show_if`. Questions SHALL return to the fold state they would have on a newly opened, unanswered questionnaire. Clearing SHALL NOT write the questionnaire file. The cleared state is written only if the responder later submits or saves.
+
+#### Scenario: Confirming the clear
+- **WHEN** the responder has answered and commented on several questions, chooses "Clear all answers", and confirms
+- **THEN** every control shows no answer, every comment box is empty, every question is expanded, and the progress indicator shows nothing answered
+
+#### Scenario: Cancelling the clear
+- **WHEN** the responder chooses "Clear all answers" and cancels the confirmation
+- **THEN** every answer, comment, and fold state is exactly as it was
+
+#### Scenario: Confirmation wording
+- **WHEN** the responder chooses "Clear all answers"
+- **THEN** a confirmation is shown reading "This will wipe all answers and comments. Are you sure?"
+
+#### Scenario: Hidden answers are cleared too
+- **WHEN** a question hidden by `show_if` holds an answer and the responder confirms a clear
+- **THEN** that answer is gone, and it is still gone if the question later becomes visible
+
+#### Scenario: Conditional questions re-hide
+- **WHEN** a question is visible only because of another question's answer, and the responder confirms a clear
+- **THEN** the conditional question is hidden again
+
+#### Scenario: A ranking returns to its authored order
+- **WHEN** the responder has reordered a `rank` question and confirms a clear
+- **THEN** the options are back in authored order and the ranking counts as unanswered
+
+#### Scenario: Clearing does not write the file
+- **WHEN** the responder confirms a clear and nothing else happens
+- **THEN** the questionnaire file on disk is unchanged
+
+#### Scenario: Closing after clearing a previously answered questionnaire
+- **WHEN** the questionnaire opened with answers in the file, the responder clears them, and closes the window
+- **THEN** they are asked to save or discard. Saving writes the questionnaire with no answers or comments, and discarding leaves the file as it was
+
+#### Scenario: Closing after clearing answers made this session
+- **WHEN** the questionnaire opened unanswered, the responder answers some questions, clears them, and closes the window
+- **THEN** no save-or-discard prompt is shown and the status becomes `dismissed`
+
+#### Scenario: Submitting after clearing
+- **WHEN** the responder clears the form and then submits with required questions unanswered
+- **THEN** submission is refused and the outstanding required questions are shown, as for any incomplete questionnaire
