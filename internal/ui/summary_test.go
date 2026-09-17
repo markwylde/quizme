@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/markwylde/interrogate/internal/questionnaire"
+	"github.com/markwylde/quizme/internal/questionnaire"
 )
 
 func TestAnswerSummaryRendersEveryType(t *testing.T) {
@@ -25,8 +25,8 @@ func TestAnswerSummaryRendersEveryType(t *testing.T) {
 		},
 		{
 			name: "text",
-			q:    questionnaire.Question{Type: questionnaire.TypeText, Answer: "interrogate"},
-			want: "interrogate",
+			q:    questionnaire.Question{Type: questionnaire.TypeText, Answer: "quizme"},
+			want: "quizme",
 		},
 		{
 			name: "textarea",

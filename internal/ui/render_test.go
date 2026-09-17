@@ -10,15 +10,15 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/test"
 
-	"github.com/markwylde/interrogate/internal/questionnaire"
+	"github.com/markwylde/quizme/internal/questionnaire"
 )
 
 // TestRenderPreview draws the form headlessly and writes it to testdata, so the
 // layout can be reviewed without a desktop. Run with -run RenderPreview to
 // refresh the images.
 func TestRenderPreview(t *testing.T) {
-	if os.Getenv("INTERROGATE_RENDER") == "" {
-		t.Skip("set INTERROGATE_RENDER=1 to refresh the preview images")
+	if os.Getenv("QUIZME_RENDER") == "" {
+		t.Skip("set QUIZME_RENDER=1 to refresh the preview images")
 	}
 
 	raw, err := os.ReadFile(filepath.Join("..", "..", "examples", "demo.yaml"))
@@ -107,7 +107,7 @@ questions:
   - id: text
     type: text
     prompt: A single line
-    answer: interrogate
+    answer: quizme
   - id: num
     type: number
     prompt: A number, between bounds
@@ -134,8 +134,8 @@ questions:
 `
 
 func TestRenderControlsPreview(t *testing.T) {
-	if os.Getenv("INTERROGATE_RENDER") == "" {
-		t.Skip("set INTERROGATE_RENDER=1 to refresh the preview images")
+	if os.Getenv("QUIZME_RENDER") == "" {
+		t.Skip("set QUIZME_RENDER=1 to refresh the preview images")
 	}
 	doc, err := questionnaire.LoadBytes("controls.yaml", []byte(controlsDoc))
 	if err != nil {

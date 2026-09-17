@@ -2,12 +2,12 @@
 
 ### Requirement: Availability of the command
 
-The skill SHALL be usable in any repository where an agent runs, and SHALL tell the agent what to do when the `interrogate` command is not installed rather than failing opaquely.
+The skill SHALL be usable in any repository where an agent runs, and SHALL tell the agent what to do when the `quizme` command is not installed rather than failing opaquely.
 
 The skill SHALL be distributable as an installable package rather than only as a file to copy, so that a repository can obtain it in one step and update it in another. The packaged skill SHALL carry a version, so an installed copy can be identified and compared with the source.
 
 #### Scenario: Command not installed
-- **WHEN** the agent attempts to run `interrogate` and it is not on the path
+- **WHEN** the agent attempts to run `quizme` and it is not on the path
 - **THEN** the agent reports that it is not installed and how to install it, and falls back to asking in conversation
 
 #### Scenario: Installing into a repository

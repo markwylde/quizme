@@ -15,7 +15,7 @@ Shielding the multi-line fields fixed half the problem. A trackpad scroll still 
 _None._
 
 ### Modified Capabilities
-- `interrogate-cli`: the "Scrolling the page is never trapped by a field" requirement now covers single-line text and number fields, not only multi-line ones.
+- `quizme-cli`: the "Scrolling the page is never trapped by a field" requirement now covers single-line text and number fields, not only multi-line ones.
 
 ## Impact
 

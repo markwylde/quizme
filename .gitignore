@@ -1,12 +1,12 @@
 # Build output
-/interrogate
+/quizme
 /dist/
 /bin/
 
 # Drawn from icon.svg by `make icon`, and bundled by `make bundle`. Both are
 # built from the drawing, so neither is kept.
 /icon.png
-/Interrogate.app/
+/Quizme.app/
 
 # Go
 *.test
@@ -15,6 +15,6 @@
 # macOS
 .DS_Store
 
-# Generated from skills/interrogate/SKILL.md by `make skill`, so this
+# Generated from skills/quizme/SKILL.md by `make skill`, so this
 # repository's own agents see the skill without installing it.
-/.claude/skills/interrogate/
+/.claude/skills/quizme/

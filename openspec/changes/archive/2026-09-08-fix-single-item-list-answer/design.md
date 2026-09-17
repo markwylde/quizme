@@ -9,7 +9,7 @@ The flow-style path is separate and unaffected: a question written as `{id: q, .
 ## Goals / Non-Goals
 
 **Goals:**
-- Every answer `interrogate` writes produces a document that loads again.
+- Every answer `quizme` writes produces a document that loads again.
 - The decision is made on grounds that stay true as values change — the value's shape, not the size of its rendering.
 
 **Non-Goals:**

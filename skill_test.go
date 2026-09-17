@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/markwylde/interrogate/internal/questionnaire"
+	"github.com/markwylde/quizme/internal/questionnaire"
 )
 
 // The skill tells an agent how to write and run a questionnaire. These tests
@@ -16,7 +16,7 @@ import (
 
 func skillText(t *testing.T) string {
 	t.Helper()
-	raw, err := os.ReadFile(filepath.Join("skills", "interrogate", "SKILL.md"))
+	raw, err := os.ReadFile(filepath.Join("skills", "quizme", "SKILL.md"))
 	if err != nil {
 		t.Fatalf("the skill is missing: %v", err)
 	}
@@ -127,7 +127,7 @@ func TestSkillCoversTheThingsThatGoWrong(t *testing.T) {
 		"running in the background":      "background",
 		"status recovery":                "lose track",
 		"comments outweighing an option": "more precise statement",
-		"the not-installed fallback":     "go install github.com/markwylde/interrogate",
+		"the not-installed fallback":     "go install github.com/markwylde/quizme",
 		"no desktop session":             "desktop session",
 	}
 	for name, needle := range required {

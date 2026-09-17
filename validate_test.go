@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/markwylde/interrogate/internal/questionnaire"
+	"github.com/markwylde/quizme/internal/questionnaire"
 )
 
 // --validate is for a caller checking a questionnaire it has just written. A

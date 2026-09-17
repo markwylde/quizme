@@ -11,7 +11,7 @@ Greenfield repo — it currently holds only OpenSpec scaffolding. See proposal.m
   questionnaire  --------+          +------------------+
         |                |          |                  |
         v                v          |                  |
-  scope.yaml  --> interrogate --> splice answers  --> scope.yaml
+  scope.yaml  --> quizme --> splice answers  --> scope.yaml
   status: pending    (window)     + status + stdout    status: submitted
 ```
 
@@ -33,7 +33,7 @@ Greenfield repo — it currently holds only OpenSpec scaffolding. See proposal.m
 
 ### Splice text, do not round-trip YAML
 
-`interrogate` parses the document to locate nodes, then edits the original bytes by line range — replacing or inserting only `answer:`, `comment:`, `status:`, and `submitted_at:` — and writes the result. It never re-serializes the whole document.
+`quizme` parses the document to locate nodes, then edits the original bytes by line range — replacing or inserting only `answer:`, `comment:`, `status:`, and `submitted_at:` — and writes the result. It never re-serializes the whole document.
 
 *Why:* Go has no round-trip-fidelity YAML library. `yaml.v3` via `yaml.Node` keeps comments and key order but reflows indentation, quoting, and line breaks; `goccy/go-yaml` behaves similarly. Since the file is authored by an agent, read by a human, and rewritten by a tool, formatting churn on every submit would be constant and ugly.
 
@@ -49,7 +49,7 @@ The top-level `status` field is the coordination channel between tool and agent.
 
 *Why:* Considered and rejected: polling the file's modification time. The agent writes the file itself, so its mtime is already fresh at launch, and any autosave would produce false positives. A lock file adds a second artifact to keep in sync — the same objection that killed the sidecar. Status is self-describing, survives an agent restart, and doubles as the record of what happened.
 
-The primary path is not polling at all: the agent launches `interrogate` in the background and is notified on exit, reading stdout and the exit code. Status is what makes recovery possible when that link is lost.
+The primary path is not polling at all: the agent launches `quizme` in the background and is notified on exit, reading stdout and the exit code. Status is what makes recovery possible when that link is lost.
 
 ### Exit codes
 
@@ -71,7 +71,7 @@ The primary path is not polling at all: the agent launches `interrogate` in the 
 
 ### Distribution splits in two
 
-The binary ships via `go install` and lives on `PATH` as `interrogate`; `go run .` during development. The skill has to reach the *other* repos where opsx runs, and this repo cannot put it there.
+The binary ships via `go install` and lives on `PATH` as `quizme`; `go run .` during development. The skill has to reach the *other* repos where opsx runs, and this repo cannot put it there.
 
 ## Risks / Trade-offs
 
@@ -84,5 +84,5 @@ The binary ships via `go install` and lives on `PATH` as `interrogate`; `go run 
 
 ## Open Questions
 
-- Whether `interrogate` should accept a `--print-only` or `--validate` mode for authoring-time checks without opening a window. Useful, but does not change the format, the approach, or the task breakdown.
+- Whether `quizme` should accept a `--print-only` or `--validate` mode for authoring-time checks without opening a window. Useful, but does not change the format, the approach, or the task breakdown.
 - Exactly how the skill is distributed to other repos (plugin, or copied into `.claude/skills`). The skill's content is unaffected either way.

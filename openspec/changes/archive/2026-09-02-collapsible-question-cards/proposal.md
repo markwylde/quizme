@@ -24,7 +24,7 @@ _None._
 
 ### Modified Capabilities
 
-- `interrogate-cli`: the single-scrolling-form and visual-separation requirements gain a collapsed state per question — what folds a card, what a folded card shows, that a fold never changes the recorded answer, and that a blocked submit reveals what it flags.
+- `quizme-cli`: the single-scrolling-form and visual-separation requirements gain a collapsed state per question — what folds a card, what a folded card shows, that a fold never changes the recorded answer, and that a blocked submit reveals what it flags.
 
 ## Impact
 

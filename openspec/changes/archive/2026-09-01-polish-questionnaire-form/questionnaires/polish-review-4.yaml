@@ -58,7 +58,7 @@ questions:
     prompt: What next?
     help: >-
       Two tasks left on this change, both verification. Then
-      distribute-interrogate-skill is planned and ready to implement.
+      distribute-quizme-skill is planned and ready to implement.
     required: true
     options:
       - Archive this, then do the plugin

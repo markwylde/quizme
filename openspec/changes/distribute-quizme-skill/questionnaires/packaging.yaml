@@ -10,14 +10,14 @@ questions:
     type: select
     prompt: Which copy of SKILL.md is the authoritative one?
     help: >
-      I'd lean towards skills/interrogate/SKILL.md — that's the plugin payload,
+      I'd lean towards skills/quizme/SKILL.md — that's the plugin payload,
       the thing other repos actually install. The .claude/ copy is then just
       dogfooding.
     required: true
     options:
-      - skills/interrogate/SKILL.md (plugin payload)
-      - .claude/skills/interrogate/SKILL.md (current location)
-    answer: skills/interrogate/SKILL.md (plugin payload)
+      - skills/quizme/SKILL.md (plugin payload)
+      - .claude/skills/quizme/SKILL.md (current location)
+    answer: skills/quizme/SKILL.md (plugin payload)
 
   - id: sync_mechanism
     type: select

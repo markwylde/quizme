@@ -1,10 +1,10 @@
-// Command interrogate presents a YAML questionnaire as a desktop form and
+// Command quizme presents a YAML questionnaire as a desktop form and
 // writes the answers back into the file it came from.
 //
 // Usage:
 //
-//	interrogate path/to/questionnaire.yaml
-//	interrogate --validate path/to/questionnaire.yaml
+//	quizme path/to/questionnaire.yaml
+//	quizme --validate path/to/questionnaire.yaml
 //
 // The exit code reports the outcome, so a caller can branch on it without
 // parsing anything:
@@ -24,8 +24,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/markwylde/interrogate/internal/questionnaire"
-	"github.com/markwylde/interrogate/internal/ui"
+	"github.com/markwylde/quizme/internal/questionnaire"
+	"github.com/markwylde/quizme/internal/ui"
 )
 
 // The icon is compiled in, like the fonts, so one binary carries everything it
@@ -70,36 +70,36 @@ func run(args []string, stdout, stderr io.Writer, show presenter) int {
 
 	doc, err := questionnaire.Load(path)
 	if err != nil {
-		fmt.Fprintf(stderr, "interrogate: %s could not be read as a questionnaire:\n%v\n", path, err)
+		fmt.Fprintf(stderr, "quizme: %s could not be read as a questionnaire:\n%v\n", path, err)
 		return exitError
 	}
 
 	if opts.validate {
 		// Loading is the whole check, and it has already happened. Nothing is
 		// presented and nothing is written, so the file is left as found.
-		fmt.Fprintf(stderr, "interrogate: %s is a valid questionnaire (%d questions)\n", path, len(doc.Questions))
+		fmt.Fprintf(stderr, "quizme: %s is a valid questionnaire (%d questions)\n", path, len(doc.Questions))
 		return exitSubmitted
 	}
 
 	status, err := show(doc)
 	if err != nil {
-		fmt.Fprintf(stderr, "interrogate: %v\n", err)
+		fmt.Fprintf(stderr, "quizme: %v\n", err)
 		return exitError
 	}
 	if !status.Valid() || status == questionnaire.StatusPending {
-		fmt.Fprintf(stderr, "interrogate: the form returned an unusable outcome %q\n", status)
+		fmt.Fprintf(stderr, "quizme: the form returned an unusable outcome %q\n", status)
 		return exitError
 	}
 
 	if err := doc.Save(status, time.Now()); err != nil {
-		fmt.Fprintf(stderr, "interrogate: %v\n", err)
+		fmt.Fprintf(stderr, "quizme: %v\n", err)
 		return exitError
 	}
 
 	// The answers go to stdout only once they are safely on disk, so a caller
 	// that trusts stdout is never ahead of the file.
 	if err := doc.Result(status).WriteJSON(stdout); err != nil {
-		fmt.Fprintf(stderr, "interrogate: could not write the answers to stdout: %v\n", err)
+		fmt.Fprintf(stderr, "quizme: could not write the answers to stdout: %v\n", err)
 		return exitError
 	}
 
@@ -123,7 +123,7 @@ type options struct {
 }
 
 func parseArgs(args []string, stderr io.Writer) (options, error) {
-	fs := flag.NewFlagSet("interrogate", flag.ContinueOnError)
+	fs := flag.NewFlagSet("quizme", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	fs.Usage = func() { fmt.Fprint(stderr, usage) }
 
@@ -138,15 +138,15 @@ func parseArgs(args []string, stderr io.Writer) (options, error) {
 		opts.path = fs.Arg(0)
 		return opts, nil
 	case 0:
-		fmt.Fprint(stderr, "interrogate: no questionnaire given\n\n"+usage)
+		fmt.Fprint(stderr, "quizme: no questionnaire given\n\n"+usage)
 		return options{}, errors.New("no questionnaire given")
 	default:
-		fmt.Fprintf(stderr, "interrogate: expected one questionnaire, got %d\n\n%s", fs.NArg(), usage)
+		fmt.Fprintf(stderr, "quizme: expected one questionnaire, got %d\n\n%s", fs.NArg(), usage)
 		return options{}, errors.New("too many arguments")
 	}
 }
 
-const usage = `usage: interrogate [--validate] <questionnaire.yaml>
+const usage = `usage: quizme [--validate] <questionnaire.yaml>
 
 Opens the questionnaire as a desktop form. On submit or save the answers are
 written back into the same file and printed to stdout as JSON.

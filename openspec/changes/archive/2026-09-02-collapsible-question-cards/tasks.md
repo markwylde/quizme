@@ -51,6 +51,6 @@
 
 ## 8. Finishing
 
-- [x] 8.1 Refresh the preview images with `INTERROGATE_RENDER=1 go test ./internal/ui -run RenderPreview` and verify both variants show a mix of folded and expanded cards legibly, with the settled rows reading as green without competing with their content
+- [x] 8.1 Refresh the preview images with `QUIZME_RENDER=1 go test ./internal/ui -run RenderPreview` and verify both variants show a mix of folded and expanded cards legibly, with the settled rows reading as green without competing with their content
 - [x] 8.2 Update the README and `examples/demo.yaml` if either describes the form's behaviour, and verify the README tests pass
 - [x] 8.3 Run `make` (or `go test ./...` and `go vet ./...`) and verify the whole suite passes

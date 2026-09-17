@@ -18,8 +18,8 @@ import (
 // these tests say so when it has been.
 
 const (
-	skillSource = "skills/interrogate/SKILL.md"
-	skillCopy   = ".claude/skills/interrogate/SKILL.md"
+	skillSource = "skills/quizme/SKILL.md"
+	skillCopy   = ".claude/skills/quizme/SKILL.md"
 )
 
 func TestSkillIsWhereTheInstallerLooks(t *testing.T) {
@@ -47,7 +47,7 @@ func TestOnlyOneCopyOfTheSkillIsCommitted(t *testing.T) {
 		if info.Name() != "SKILL.md" {
 			return nil
 		}
-		if !strings.Contains(path, "interrogate") {
+		if !strings.Contains(path, "quizme") {
 			return nil // the OpenSpec skills are this repository's own tooling
 		}
 		if path == filepath.FromSlash(skillCopy) {
@@ -111,8 +111,8 @@ func TestSkillFrontmatterNamesAndDescribesTheSkill(t *testing.T) {
 	if !found {
 		t.Fatal("the skill has no frontmatter block, so no installer will recognise it")
 	}
-	if !strings.Contains(head, "name: interrogate") {
-		t.Errorf("the frontmatter does not name the skill `interrogate`:\n%s", head)
+	if !strings.Contains(head, "name: quizme") {
+		t.Errorf("the frontmatter does not name the skill `quizme`:\n%s", head)
 	}
 	if !strings.Contains(head, "description:") {
 		t.Error("the frontmatter has no description, so nothing will know when to use it")

@@ -1,4 +1,4 @@
-# interrogate-skill Specification
+# quizme-skill Specification
 
 ## Purpose
 Defines the contract an agent follows when it wants a batch of decisions from a human: when to reach for a questionnaire instead of asking in chat, where the file goes, how the form is launched and awaited, and how the answers come back.
@@ -51,7 +51,7 @@ The skill SHALL direct the agent to write questions the human can answer without
 
 ### Requirement: Launching and awaiting the form
 
-The agent SHALL run the installed `interrogate` command against the questionnaire path without blocking on it, because a human may take many minutes to respond, and SHALL resume when the command exits.
+The agent SHALL run the installed `quizme` command against the questionnaire path without blocking on it, because a human may take many minutes to respond, and SHALL resume when the command exits.
 
 #### Scenario: Long response time
 - **WHEN** the human leaves the form open for longer than a foreground command would tolerate
@@ -87,8 +87,8 @@ The agent SHALL branch on the questionnaire's outcome: proceeding on a submissio
 
 ### Requirement: Availability of the command
 
-The skill SHALL be usable in any repository where an agent runs, and SHALL tell the agent what to do when the `interrogate` command is not installed rather than failing opaquely.
+The skill SHALL be usable in any repository where an agent runs, and SHALL tell the agent what to do when the `quizme` command is not installed rather than failing opaquely.
 
 #### Scenario: Command not installed
-- **WHEN** the agent attempts to run `interrogate` and it is not on the path
+- **WHEN** the agent attempts to run `quizme` and it is not on the path
 - **THEN** the agent reports that it is not installed and how to install it, and falls back to asking in conversation

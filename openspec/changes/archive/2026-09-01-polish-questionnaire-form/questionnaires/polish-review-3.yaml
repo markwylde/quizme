@@ -75,7 +75,7 @@ questions:
     type: select
     prompt: What next?
     help: >-
-      distribute-interrogate-skill is planned and ready. One task left on
+      distribute-quizme-skill is planned and ready. One task left on
       this change — the final end-to-end run, which this is.
     required: true
     options:

@@ -1,5 +1,5 @@
-# A worked example: the questions still open on interrogate itself.
-title: Interrogate — open decisions
+# A worked example: the questions still open on quizme itself.
+title: Quizme — open decisions
 intro: |
   A few things left to settle. Answer what you have a view on;
   anything you skip, I'll come back to.
@@ -10,7 +10,7 @@ submitted_at: "2026-09-01T16:12:46+01:00"
 questions:
   - id: validate_flag
     type: select
-    prompt: Should `interrogate` get a --validate mode?
+    prompt: Should `quizme` get a --validate mode?
     help: Checks a questionnaire without opening a window. Useful when authoring.
     required: true
     options:
@@ -81,7 +81,7 @@ questions:
 
   - id: binary_name
     type: text
-    prompt: Is `interrogate` the right command name?
+    prompt: Is `quizme` the right command name?
 
   - id: anything_else
     type: textarea

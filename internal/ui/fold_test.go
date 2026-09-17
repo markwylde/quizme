@@ -9,7 +9,7 @@ import (
 	"fyne.io/fyne/v2/test"
 	"fyne.io/fyne/v2/widget"
 
-	"github.com/markwylde/interrogate/internal/questionnaire"
+	"github.com/markwylde/quizme/internal/questionnaire"
 )
 
 // --- The split -----------------------------------------------------------
@@ -446,7 +446,7 @@ func TestDoneFoldsTheTypedQuestions(t *testing.T) {
 		set  func(f *form, t *testing.T)
 		want string
 	}{
-		{id: "name", set: func(f *form, t *testing.T) { find[*widget.Entry](t, f, "name").SetText("interrogate") }, want: "interrogate"},
+		{id: "name", set: func(f *form, t *testing.T) { find[*widget.Entry](t, f, "name").SetText("quizme") }, want: "quizme"},
 		{id: "budget", set: func(f *form, t *testing.T) { find[*widget.Entry](t, f, "budget").SetText("12") }, want: "12"},
 		{id: "formats", set: func(f *form, t *testing.T) {
 			find[*widget.CheckGroup](t, f, "formats").SetSelected([]string{"yaml", "json"})
@@ -533,7 +533,7 @@ func TestMovingOnWithoutFinishingLeavesTheQuestionOpen(t *testing.T) {
 
 	name := find[*widget.Entry](t, f, "name")
 	w.Canvas().Focus(name)
-	test.Type(name, "interrogate")
+	test.Type(name, "quizme")
 
 	// Off to another question, without saying they were done with this one.
 	budget := find[*widget.Entry](t, f, "budget")
@@ -543,7 +543,7 @@ func TestMovingOnWithoutFinishingLeavesTheQuestionOpen(t *testing.T) {
 	if f.cards["name"].collapsed() {
 		t.Error("the first question folded when focus left it, mid-answer")
 	}
-	if got := doc.Question("name").Answer; got != "interrogate" {
+	if got := doc.Question("name").Answer; got != "quizme" {
 		t.Errorf("answer = %#v, want it recorded even though the question is still open", got)
 	}
 }
@@ -609,7 +609,7 @@ func TestFoldingChangesNothingThatIsCounted(t *testing.T) {
 	answer := func(f *form, t *testing.T) {
 		t.Helper()
 		find[*widget.RadioGroup](t, f, "storage").SetSelected("both")
-		find[*widget.Entry](t, f, "name").SetText("interrogate")
+		find[*widget.Entry](t, f, "name").SetText("quizme")
 		find[*widget.Entry](t, f, "budget").SetText("7")
 	}
 	answer(folded, t)
@@ -722,7 +722,7 @@ func TestFoldingReachesNeitherTheFileNorTheOutput(t *testing.T) {
 	answer := func(f *form, t *testing.T) {
 		t.Helper()
 		find[*widget.RadioGroup](t, f, "storage").SetSelected("both")
-		find[*widget.Entry](t, f, "name").SetText("interrogate")
+		find[*widget.Entry](t, f, "name").SetText("quizme")
 		f.cards["name"].comment.Entry().SetText("a note")
 	}
 

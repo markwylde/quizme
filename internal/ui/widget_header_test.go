@@ -11,7 +11,7 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
-	"github.com/markwylde/interrogate/internal/questionnaire"
+	"github.com/markwylde/quizme/internal/questionnaire"
 )
 
 func TestHeaderShowsEveryPart(t *testing.T) {
@@ -73,7 +73,7 @@ func TestHeaderTicksOnlyWhenAnswered(t *testing.T) {
 		t.Error("an unanswered question should carry no tick")
 	}
 
-	q.Answer = "interrogate"
+	q.Answer = "quizme"
 	h.Sync()
 	if !h.tick.Visible() {
 		t.Error("an answered question should carry a tick")
@@ -184,7 +184,7 @@ func TestHeaderSummaryNeverWidensThePage(t *testing.T) {
 		ID:     "q",
 		Prompt: "Call it what?",
 		Type:   questionnaire.TypeTextarea,
-		Answer: strings.Repeat("interrogate ", 40),
+		Answer: strings.Repeat("quizme ", 40),
 	}
 	h := newQuestionHeader(long, func() {})
 	h.SetCollapsed(true)

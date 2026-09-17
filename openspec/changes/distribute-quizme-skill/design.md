@@ -2,14 +2,14 @@
 
 See proposal.md for why. The approach changed once the packaging was tried for real, so the reasoning below records both what was rejected and why.
 
-The first plan was a Claude Code plugin. It works — the plugin installs, reports its version, and exposes the skill — but a plugin ships a whole repository directory. Installing it copied 2.6 MB into the plugin cache: the Go source, 1.6 MB of bundled fonts, `openspec/`, every test file, and this repository's own `.claude/skills/` including seven unrelated OpenSpec skills. Restructuring into `plugins/interrogate/` would have fixed the size, at the cost of a second manifest, a second version to bump, and a distribution that only ever serves Claude Code.
+The first plan was a Claude Code plugin. It works — the plugin installs, reports its version, and exposes the skill — but a plugin ships a whole repository directory. Installing it copied 2.6 MB into the plugin cache: the Go source, 1.6 MB of bundled fonts, `openspec/`, every test file, and this repository's own `.claude/skills/` including seven unrelated OpenSpec skills. Restructuring into `plugins/quizme/` would have fixed the size, at the cost of a second manifest, a second version to bump, and a distribution that only ever serves Claude Code.
 
 `npx skills` (`vercel-labs/skills`) reads a repository, finds `SKILL.md` files, and copies or symlinks the ones you pick into whichever agent's skills directory you name — `.claude/skills/` for Claude Code, `.agents/skills/` for Codex and Cursor, and so on for some seventy-odd others. Installing the same skill this way copied 8 KB.
 
 ```
   plugin                       npx skills
   ------                       ----------
-  add marketplace              npx skills add <repo> --skill interrogate
+  add marketplace              npx skills add <repo> --skill quizme
   install plugin
   2.6 MB, whole repo           8 KB, one file
   Claude Code                  77+ agents
@@ -29,15 +29,15 @@ The first plan was a Claude Code plugin. It works — the plugin installs, repor
 
 ## Decisions
 
-### `skills/interrogate/SKILL.md` is the authoritative copy
+### `skills/quizme/SKILL.md` is the authoritative copy
 
 That is the layout `npx skills` discovers, and it is the file other people receive, so it is the one to edit and review.
 
-*Verified rather than assumed:* running the installer against this repository listed `interrogate` from that path, and a real install into a scratch repository produced `.claude/skills/interrogate/SKILL.md` and nothing else.
+*Verified rather than assumed:* running the installer against this repository listed `quizme` from that path, and a real install into a scratch repository produced `.claude/skills/quizme/SKILL.md` and nothing else.
 
 ### The copy under `.claude/` is generated and ignored
 
-`.claude/skills/interrogate/SKILL.md` is what this repository's own agents read, because that is where Claude Code looks. It is produced by `make skill` and git-ignored.
+`.claude/skills/quizme/SKILL.md` is what this repository's own agents read, because that is where Claude Code looks. It is produced by `make skill` and git-ignored.
 
 *Why not commit it:* two committed copies of the same instructions is a drift problem that needs a test to police. An ignored copy cannot be shipped stale, because it is never shipped at all.
 
@@ -55,7 +55,7 @@ That is the layout `npx skills` discovers, and it is the file other people recei
 
 ### Discovery finds more than our skill, and that is fine
 
-`npx skills add markwylde/interrogate` with no `--skill` lists seven skills, because this repository also carries the OpenSpec skills under `.claude/`. The documented command names `--skill interrogate`.
+`npx skills add markwylde/quizme` with no `--skill` lists seven skills, because this repository also carries the OpenSpec skills under `.claude/`. The documented command names `--skill quizme`.
 
 *Alternative considered:* moving the OpenSpec skills out. They are this repository's own tooling and belong where their own workflow put them; contorting the repo to tidy one listing is the wrong trade.
 

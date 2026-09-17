@@ -258,7 +258,7 @@ func TestPreservationWithTheFullFixture(t *testing.T) {
 		"storage":     "sidecar",
 		"storage_why": "because it drifts\n\nand that is worse",
 		"formats":     []string{"yaml", "json"},
-		"name":        "interrogate",
+		"name":        "quizme",
 		"budget":      12.0,
 		"ship_it":     true,
 		"urgency":     4,

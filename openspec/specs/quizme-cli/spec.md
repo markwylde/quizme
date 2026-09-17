@@ -1,18 +1,18 @@
-# interrogate-cli Specification
+# quizme-cli Specification
 
 ## Purpose
-Defines the `interrogate` command: how it is invoked, how the desktop form behaves for the person filling it in, and what it leaves behind for the caller once the window closes.
+Defines the `quizme` command: how it is invoked, how the desktop form behaves for the person filling it in, and what it leaves behind for the caller once the window closes.
 
 ## Requirements
 
 ### Requirement: Command invocation
 
-`interrogate` SHALL accept a single positional argument: the path to a questionnaire document. It SHALL open a desktop window presenting that questionnaire and SHALL run until the responder submits, saves, or dismisses it.
+`quizme` SHALL accept a single positional argument: the path to a questionnaire document. It SHALL open a desktop window presenting that questionnaire and SHALL run until the responder submits, saves, or dismisses it.
 
 It SHALL also accept a `--validate` flag, which checks the questionnaire and exits without opening a window, so a questionnaire can be verified without interrupting anyone.
 
 #### Scenario: Valid questionnaire path
-- **WHEN** `interrogate path/to/questions.yaml` is run and the file is a valid questionnaire
+- **WHEN** `quizme path/to/questions.yaml` is run and the file is a valid questionnaire
 - **THEN** a window opens presenting the questionnaire's title, intro, and questions
 
 #### Scenario: Missing file
@@ -24,7 +24,7 @@ It SHALL also accept a `--validate` flag, which checks the questionnaire and exi
 - **THEN** no window opens, the validation errors are written to stderr, and the exit code signals a usage error
 
 #### Scenario: No argument given
-- **WHEN** `interrogate` is run with no path
+- **WHEN** `quizme` is run with no path
 - **THEN** usage text is written to stderr and the exit code signals a usage error
 
 #### Scenario: No desktop session available
@@ -32,7 +32,7 @@ It SHALL also accept a `--validate` flag, which checks the questionnaire and exi
 - **THEN** it fails immediately with an explanatory error rather than blocking
 
 #### Scenario: Validating a good questionnaire
-- **WHEN** `interrogate --validate path/to/questions.yaml` is run on a valid questionnaire
+- **WHEN** `quizme --validate path/to/questions.yaml` is run on a valid questionnaire
 - **THEN** no window opens, the exit code signals success, and the questionnaire file is left unchanged
 
 #### Scenario: Validating a bad questionnaire
@@ -131,7 +131,7 @@ Questions gated by `show_if` SHALL appear and disappear as the answers they depe
 
 ### Requirement: Writing answers without disturbing the document
 
-On submit or save, `interrogate` SHALL write the answers into the questionnaire file it was given, changing only the `answer` and `comment` keys of each question and the top-level `status` and `submitted_at`. All other bytes of the file — comments, blank lines, key order, quoting style, and indentation — SHALL be preserved exactly. The document it writes SHALL be a loadable questionnaire, whatever the shape of the answers it records.
+On submit or save, `quizme` SHALL write the answers into the questionnaire file it was given, changing only the `answer` and `comment` keys of each question and the top-level `status` and `submitted_at`. All other bytes of the file — comments, blank lines, key order, quoting style, and indentation — SHALL be preserved exactly. The document it writes SHALL be a loadable questionnaire, whatever the shape of the answers it records.
 
 #### Scenario: Hand-written comments survive
 - **WHEN** the questionnaire file contains YAML comments and the responder submits
@@ -167,7 +167,7 @@ On submit or save, `interrogate` SHALL write the answers into the questionnaire 
 
 ### Requirement: Answers reported on stdout
 
-On submit or save, `interrogate` SHALL print the collected answers to stdout as JSON, keyed by question id, including each question's answer and comment, so a caller can consume them without re-reading the file.
+On submit or save, `quizme` SHALL print the collected answers to stdout as JSON, keyed by question id, including each question's answer and comment, so a caller can consume them without re-reading the file.
 
 #### Scenario: Submitted answers printed
 - **WHEN** the responder submits
@@ -183,7 +183,7 @@ On submit or save, `interrogate` SHALL print the collected answers to stdout as 
 
 ### Requirement: Closing without submitting
 
-If the responder closes the window with unsaved changes, `interrogate` SHALL ask whether to save or discard them, and SHALL not lose work silently.
+If the responder closes the window with unsaved changes, `quizme` SHALL ask whether to save or discard them, and SHALL not lose work silently.
 
 #### Scenario: Close with unsaved changes
 - **WHEN** the responder closes the window after answering something

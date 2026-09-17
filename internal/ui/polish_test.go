@@ -10,7 +10,7 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
-	"github.com/markwylde/interrogate/internal/questionnaire"
+	"github.com/markwylde/quizme/internal/questionnaire"
 )
 
 // --- Scrolling header ---------------------------------------------------
@@ -205,7 +205,7 @@ func TestProgressStartsEmpty(t *testing.T) {
 func TestProgressFollowsAnswers(t *testing.T) {
 	f, _ := build(t, uiDoc)
 
-	find[*widget.Entry](t, f, "name").SetText("interrogate")
+	find[*widget.Entry](t, f, "name").SetText("quizme")
 	if got := f.progress.Value(); !closeTo(got, 1.0/7.0) {
 		t.Errorf("progress = %v, want one seventh", got)
 	}
@@ -448,10 +448,10 @@ func TestShieldedTextFieldStillAnswersAndCounts(t *testing.T) {
 	answered, before := f.counts()
 
 	entry := find[*widget.Entry](t, f, "name")
-	entry.SetText("interrogate")
+	entry.SetText("quizme")
 
-	if got := doc.Question("name").Answer; got != "interrogate" {
-		t.Errorf("answer = %#v, want %q", got, "interrogate")
+	if got := doc.Question("name").Answer; got != "quizme" {
+		t.Errorf("answer = %#v, want %q", got, "quizme")
 	}
 	nowAnswered, total := f.counts()
 	if nowAnswered != answered+1 {

@@ -21,7 +21,7 @@ func CheckDisplay() error {
 	}
 	stat, ok := info.Sys().(*syscall.Stat_t)
 	if !ok || int(stat.Uid) != os.Getuid() {
-		return errors.New("no desktop session is available over this connection; run interrogate on the machine you are logged into")
+		return errors.New("no desktop session is available over this connection; run quizme on the machine you are logged into")
 	}
 	return nil
 }

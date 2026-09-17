@@ -1,6 +1,6 @@
 ## Why
 
-Tick one box in a multiselect and `interrogate` writes a file it cannot read back. The answers reach the disk, then the re-read fails, the command exits `1`, and the caller is handed an error for a questionnaire the responder submitted perfectly well — with the file left in a state no tool can parse, so the answers are effectively lost.
+Tick one box in a multiselect and `quizme` writes a file it cannot read back. The answers reach the disk, then the re-read fails, the command exits `1`, and the caller is handed an error for a questionnaire the responder submitted perfectly well — with the file left in a state no tool can parse, so the answers are effectively lost.
 
 The cause is one line in `renderEntry`: a value that marshals to a single line is placed inline after `key: `. That is right for a scalar, but a one-element sequence also marshals to a single line — `- TypeScript` — and `answer: - TypeScript` is not YAML. Two selections come out correctly, because two lines take the block branch, which is why the existing tests never saw it: they only ever use two-element lists.
 
@@ -17,7 +17,7 @@ The cause is one line in `renderEntry`: a value that marshals to a single line i
 _None._
 
 ### Modified Capabilities
-- `interrogate-cli`: the "Writing answers without disturbing the document" requirement now states that the written document must still load, whatever the shape of the answers, with scenarios for a single-item list and for text that reads like one.
+- `quizme-cli`: the "Writing answers without disturbing the document" requirement now states that the written document must still load, whatever the shape of the answers, with scenarios for a single-item list and for text that reads like one.
 
 ## Impact
 

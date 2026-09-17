@@ -1,6 +1,6 @@
 ## Context
 
-`interrogate` shipped and was reviewed by answering a questionnaire with it. See proposal.md for what that review asked for. The relevant constraints from the existing build:
+`quizme` shipped and was reviewed by answering a questionnaire with it. See proposal.md for what that review asked for. The relevant constraints from the existing build:
 
 - Cards are constructed once and shown or hidden, never rebuilt, so that a question appearing cannot steal focus from a control being typed in. Anything added here has to respect that.
 - Fyne's widget set is thin. `scale` and `rank` are already custom widgets; a collapsible comment is a third.

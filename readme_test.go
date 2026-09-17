@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/markwylde/interrogate/internal/questionnaire"
+	"github.com/markwylde/quizme/internal/questionnaire"
 )
 
 // The README shows a questionnaire before and after it is answered, and claims

@@ -10,7 +10,7 @@ import (
 	"fyne.io/fyne/v2/test"
 	"fyne.io/fyne/v2/widget"
 
-	"github.com/markwylde/interrogate/internal/questionnaire"
+	"github.com/markwylde/quizme/internal/questionnaire"
 )
 
 func TestMain(m *testing.M) {
@@ -166,8 +166,8 @@ func TestMultiselectRecordsEveryChoice(t *testing.T) {
 func TestTextRecordsTyping(t *testing.T) {
 	f, doc := build(t, uiDoc)
 	entry := find[*widget.Entry](t, f, "name")
-	entry.SetText("interrogate")
-	if got := doc.Question("name").Answer; got != "interrogate" {
+	entry.SetText("quizme")
+	if got := doc.Question("name").Answer; got != "quizme" {
 		t.Errorf("answer = %#v", got)
 	}
 }

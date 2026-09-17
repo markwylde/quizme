@@ -11,14 +11,14 @@ questions:
   - {id: q, type: text, prompt: "Name?"}
 `
 	got := render(t, src, StatusSubmitted, func(d *Document) {
-		d.Question("q").Answer = "interrogate"
+		d.Question("q").Answer = "quizme"
 		d.Question("q").Comment = "seems right"
 	})
 	wantEqual(t, got, `title: t
 status: submitted
 submitted_at: "2026-09-01T12:00:00Z"
 questions:
-  - {id: q, type: text, prompt: "Name?", answer: interrogate, comment: seems right}
+  - {id: q, type: text, prompt: "Name?", answer: quizme, comment: seems right}
 `)
 }
 

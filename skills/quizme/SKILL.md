@@ -1,19 +1,19 @@
 ---
-name: interrogate
+name: quizme
 description: Ask the user several related questions at once by opening a desktop form instead of asking in chat. Use when a handful of decisions are blocking progress on a change - scope, approach, trade-offs - and the user would rather see them all together and answer in any order. Not for a single question, and not when each follow-up depends on interpreting the previous answer.
-allowed-tools: Bash(interrogate:*), Read, Write, Edit
+allowed-tools: Bash(quizme:*), Read, Write, Edit
 license: MIT
-compatibility: Requires the interrogate CLI on PATH (go install github.com/markwylde/interrogate@latest).
+compatibility: Requires the quizme CLI on PATH (go install github.com/markwylde/quizme@latest).
 metadata:
   author: markwylde
   version: "1.0.2"
 ---
 
-# Interrogate
+# Quizme
 
 Put a batch of decisions to the user as a form rather than a conversation.
 
-You write a YAML questionnaire, run `interrogate` against it, and the user gets
+You write a YAML questionnaire, run `quizme` against it, and the user gets
 a window with every question on one scrolling page. They answer in any order,
 attach a comment to anything, and submit. The answers are written back into the
 same file and printed to stdout as JSON.
@@ -111,14 +111,14 @@ somewhere to qualify an answer.
 list-valued answer matches a single expected value it contains; a list-valued
 expectation means "any of these".
 
-You own the questions. `interrogate` owns only `answer`, `comment`, `status`,
+You own the questions. `quizme` owns only `answer`, `comment`, `status`,
 and `submitted_at` - it writes those and leaves every other byte of the file
 alone, so your comments and formatting survive being answered.
 
 ## Checking a questionnaire before you run it
 
 ```bash
-interrogate --validate <path>
+quizme --validate <path>
 ```
 
 Checks the file and exits without opening a window or writing anything: exit `0`
@@ -137,7 +137,7 @@ command should ever wait. **Run it in the background** and pick the answers up
 when it exits:
 
 ```bash
-interrogate openspec/changes/add-dark-mode/questionnaires/scope.yaml
+quizme openspec/changes/add-dark-mode/questionnaires/scope.yaml
 ```
 
 Launch that with your tool's background option so the session is notified when
@@ -178,10 +178,10 @@ something a `show_if` hid, ask.
 
 ## If the command is missing
 
-`interrogate` has to be installed on the machine:
+`quizme` has to be installed on the machine:
 
 ```bash
-go install github.com/markwylde/interrogate@latest
+go install github.com/markwylde/quizme@latest
 ```
 
 If it is not on `PATH`, say so, give that line, and **ask your questions in

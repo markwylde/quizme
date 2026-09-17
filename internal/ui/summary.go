@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/markwylde/interrogate/internal/questionnaire"
+	"github.com/markwylde/quizme/internal/questionnaire"
 )
 
 // summaryLimit is how much of an answer a collapsed question shows. Longer than

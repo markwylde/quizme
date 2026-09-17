@@ -13,7 +13,7 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 
-	"github.com/markwylde/interrogate/internal/questionnaire"
+	"github.com/markwylde/quizme/internal/questionnaire"
 )
 
 // radioLimit is the point past which a list of options stops being worth
@@ -29,7 +29,7 @@ const radioLimit = 7
 // it, and a package can only embed what sits beside it. Empty leaves whatever
 // the platform gives a bare binary.
 func Run(doc *questionnaire.Document, icon []byte) (questionnaire.Status, error) {
-	a := app.NewWithID("com.markwylde.interrogate")
+	a := app.NewWithID("com.markwylde.quizme")
 	a.Settings().SetTheme(newTheme())
 	if len(icon) > 0 {
 		a.SetIcon(iconResource(icon))

@@ -2,7 +2,7 @@
 
 ### Requirement: Writing answers without disturbing the document
 
-On submit or save, `interrogate` SHALL write the answers into the questionnaire file it was given, changing only the `answer` and `comment` keys of each question and the top-level `status` and `submitted_at`. All other bytes of the file — comments, blank lines, key order, quoting style, and indentation — SHALL be preserved exactly. The document it writes SHALL be a loadable questionnaire, whatever the shape of the answers it records.
+On submit or save, `quizme` SHALL write the answers into the questionnaire file it was given, changing only the `answer` and `comment` keys of each question and the top-level `status` and `submitted_at`. All other bytes of the file — comments, blank lines, key order, quoting style, and indentation — SHALL be preserved exactly. The document it writes SHALL be a loadable questionnaire, whatever the shape of the answers it records.
 
 #### Scenario: Hand-written comments survive
 - **WHEN** the questionnaire file contains YAML comments and the responder submits

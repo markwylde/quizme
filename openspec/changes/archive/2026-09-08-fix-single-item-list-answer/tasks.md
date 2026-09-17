@@ -19,4 +19,4 @@
 
 ## 4. Verify end to end
 
-- [x] 4.1 Answer a real questionnaire with exactly one box ticked in a `multiselect`, and verify the command exits `0`, prints the answers as JSON, and leaves a file that `interrogate --validate` accepts
+- [x] 4.1 Answer a real questionnaire with exactly one box ticked in a `multiselect`, and verify the command exits `0`, prints the answers as JSON, and leaves a file that `quizme --validate` accepts

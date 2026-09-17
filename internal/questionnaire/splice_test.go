@@ -47,7 +47,7 @@ questions:
     prompt: What should we call it?
 `
 	got := render(t, src, StatusSubmitted, func(d *Document) {
-		d.Question("name").Answer = "interrogate"
+		d.Question("name").Answer = "quizme"
 	})
 	wantEqual(t, got, `title: t
 status: submitted
@@ -56,7 +56,7 @@ questions:
   - id: name
     type: text
     prompt: What should we call it?
-    answer: interrogate
+    answer: quizme
 `)
 }
 

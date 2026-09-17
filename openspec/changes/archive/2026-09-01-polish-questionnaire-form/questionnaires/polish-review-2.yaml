@@ -85,7 +85,7 @@ questions:
     type: select
     prompt: What next?
     help: >-
-      distribute-interrogate-skill is planned and ready to implement.
+      distribute-quizme-skill is planned and ready to implement.
       Archiving this change first is the tidy path.
     required: true
     options:

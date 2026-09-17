@@ -437,7 +437,7 @@ func (d *Document) Save(status Status, at time.Time) error {
 
 func atomicWrite(path string, data []byte, perm os.FileMode) error {
 	dir := filepath.Dir(path)
-	tmp, err := os.CreateTemp(dir, ".interrogate-*.tmp")
+	tmp, err := os.CreateTemp(dir, ".quizme-*.tmp")
 	if err != nil {
 		return fmt.Errorf("could not create a temporary file next to %s: %w", path, err)
 	}

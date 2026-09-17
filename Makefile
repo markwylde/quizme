@@ -1,10 +1,10 @@
-BINARY := interrogate
+BINARY := quizme
 GO ?= go
 
 # The plugin payload is the authoritative skill; the copy under .claude/ exists
 # only so this repository's own agents see it without installing the plugin.
-SKILL_SRC := skills/interrogate/SKILL.md
-SKILL_COPY := .claude/skills/interrogate/SKILL.md
+SKILL_SRC := skills/quizme/SKILL.md
+SKILL_COPY := .claude/skills/quizme/SKILL.md
 
 .PHONY: build test run fmt vet clean install skill icon bundle
 
@@ -25,13 +25,13 @@ icon: icon.png
 icon.png: icon.svg internal/tools/icon/main.go
 	$(GO) run ./internal/tools/icon -size 1024
 
-# bundle builds Interrogate.app, which is how macOS is given an icon: it takes
+# bundle builds Quizme.app, which is how macOS is given an icon: it takes
 # the Dock tile from an application bundle, never from a bare binary. Run it
 # with a questionnaire like so:
 #
-#	open -a ./Interrogate.app --args path/to/questions.yaml
+#	open -a ./Quizme.app --args path/to/questions.yaml
 bundle: icon.png
-	$(GO) run fyne.io/tools/cmd/fyne@latest package -os darwin -icon icon.png -name Interrogate
+	$(GO) run fyne.io/tools/cmd/fyne@latest package -os darwin -icon icon.png -name Quizme
 
 # skill regenerates the local copy from the authoritative one.
 skill:
@@ -50,4 +50,4 @@ install:
 
 clean:
 	rm -f $(BINARY) icon.png
-	rm -rf Interrogate.app
+	rm -rf Quizme.app

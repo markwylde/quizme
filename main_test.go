@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/markwylde/interrogate/internal/questionnaire"
+	"github.com/markwylde/quizme/internal/questionnaire"
 )
 
 // answered returns a presenter that fills in the given answers and leaves the
@@ -65,7 +65,7 @@ func invoke(t *testing.T, args []string, show presenter) result {
 
 func TestExitCodeSubmitted(t *testing.T) {
 	path := writeSample(t, sample)
-	got := invoke(t, []string{path}, answered(questionnaire.StatusSubmitted, map[string]any{"name": "interrogate"}))
+	got := invoke(t, []string{path}, answered(questionnaire.StatusSubmitted, map[string]any{"name": "quizme"}))
 	if got.code != exitSubmitted {
 		t.Errorf("exit code = %d, want %d\nstderr: %s", got.code, exitSubmitted, got.stderr)
 	}
@@ -77,7 +77,7 @@ func TestExitCodeSubmitted(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(saved), "answer: interrogate") {
+	if !strings.Contains(string(saved), "answer: quizme") {
 		t.Errorf("answer not written to the file:\n%s", saved)
 	}
 }
@@ -218,7 +218,7 @@ func TestUnusableOutcomeIsRejected(t *testing.T) {
 func TestStdoutIsParseableJSONOnly(t *testing.T) {
 	path := writeSample(t, sample)
 	got := invoke(t, []string{path}, answered(questionnaire.StatusSubmitted, map[string]any{
-		"name":  "interrogate",
+		"name":  "quizme",
 		"notes": "a note\nover two lines",
 	}))
 
@@ -232,7 +232,7 @@ func TestStdoutIsParseableJSONOnly(t *testing.T) {
 	if !out.Complete {
 		t.Error("Complete should be true once the required question is answered")
 	}
-	if got, want := out.Answers["name"].Answer, "interrogate"; got != want {
+	if got, want := out.Answers["name"].Answer, "quizme"; got != want {
 		t.Errorf("name answer = %#v, want %q", got, want)
 	}
 	if got := out.Answers["notes"].Answer; got != "a note\nover two lines" {
@@ -274,7 +274,7 @@ func TestCommentsAreReported(t *testing.T) {
 		// A comment with no answer must still travel: it is often the most
 		// precise thing the responder said.
 		doc.Question("notes").Comment = "worth a conversation"
-		doc.Question("name").Answer = "interrogate"
+		doc.Question("name").Answer = "quizme"
 		return questionnaire.StatusSubmitted, nil
 	})
 	var out questionnaire.Output

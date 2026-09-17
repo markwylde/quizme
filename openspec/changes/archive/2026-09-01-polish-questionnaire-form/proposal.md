@@ -1,6 +1,6 @@
 ## Why
 
-The first questionnaire answered with `interrogate` was also a review of it. The form works and reads well, but three quarters of the window is spent on chrome and empty comment boxes: a pinned header that repeats what the responder already read, and a two-row comment field under every question whether or not they want one. On a ten-question form that is most of the scrolling. The same review asked for a sense of progress through the page, and for a way to check a questionnaire without opening a window — which an agent needs to verify a file it has just written.
+The first questionnaire answered with `quizme` was also a review of it. The form works and reads well, but three quarters of the window is spent on chrome and empty comment boxes: a pinned header that repeats what the responder already read, and a two-row comment field under every question whether or not they want one. On a ten-question form that is most of the scrolling. The same review asked for a sense of progress through the page, and for a way to check a questionnaire without opening a window — which an agent needs to verify a file it has just written.
 
 ## What Changes
 
@@ -9,7 +9,7 @@ The first questionnaire answered with `interrogate` was also a review of it. The
 - **A progress bar** across the top edge of the footer. The responder can see how far through the questionnaire they are at a glance, without reading a count or judging it by the scrollbar.
 - **Scrolling no longer stops over a text field.** Fyne gives every wrapping multi-line entry an internal scroller that consumes scroll events whether or not it has anywhere to scroll, and events do not bubble, so a trackpad scroll dies the moment the pointer crosses a comment box.
 - **Each question sits on its own card.** A hairline separator turned out not to be enough to tell one question from the next when scrolling. Every question gets a panel in a single colour that contrasts with a lightened page, separated by a margin — one shade, not a cycle of them, so the page reads as a stack of cards rather than a swatch book.
-- **`interrogate --validate <path>`** checks a questionnaire and exits without opening a window, reporting the same errors it would refuse to open on.
+- **`quizme --validate <path>`** checks a questionnaire and exits without opening a window, reporting the same errors it would refuse to open on.
 
 ## Capabilities
 
@@ -18,7 +18,7 @@ The first questionnaire answered with `interrogate` was also a review of it. The
 _None._
 
 ### Modified Capabilities
-- `interrogate-cli`: adds a validate-only mode to the command's contract, and changes the form's resting layout — a scrolling header, collapsed comment fields, and a visible sense of progress.
+- `quizme-cli`: adds a validate-only mode to the command's contract, and changes the form's resting layout — a scrolling header, collapsed comment fields, and a visible sense of progress.
 
 ## Impact
 
