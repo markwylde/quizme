@@ -8,7 +8,7 @@ them one at a time in chat is slow, easy to lose, and impossible to answer out
 of order. `quizme` turns them into a form: one scrolling page, answer in
 any order, attach a comment to anything, submit once.
 
-![The form](internal/ui/testdata/preview-light.png)
+![The form](./screenshot.png)
 
 ## Install
 
