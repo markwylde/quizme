@@ -25,14 +25,17 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      # Fyne links against the system's GL and X11 headers, which the Linux
-      # runner does not carry. macOS needs nothing: the SDKs are already there.
+      # Fyne links against the system's GL, X11 and Wayland headers, which the
+      # Linux runner does not carry - GLFW compiles both display backends, so
+      # the Wayland ones are needed even though nothing here runs under it.
+      # macOS needs none of this: the SDKs are already there.
       - name: Install the GUI headers Fyne builds against
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            libgl1-mesa-dev xorg-dev libxkbcommon-dev
+            libgl1-mesa-dev xorg-dev libxkbcommon-dev \
+            libwayland-dev wayland-protocols libegl-dev
 
       - name: Check the formatting
         run: |
