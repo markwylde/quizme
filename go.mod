@@ -1,6 +1,6 @@
 module github.com/markwylde/quizme
 
-go 1.23.0
+go 1.25.0
 
 require (
 	fyne.io/fyne/v2 v2.8.1
@@ -37,8 +37,8 @@ require (
 	github.com/rymdport/portal v0.4.2 // indirect
 	github.com/stretchr/testify v1.11.1 // indirect
 	github.com/yuin/goldmark v1.8.2 // indirect
-	golang.org/x/image v0.24.0 // indirect
+	golang.org/x/image v0.41.0 // indirect
 	golang.org/x/net v0.35.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
-	golang.org/x/text v0.22.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
 )
